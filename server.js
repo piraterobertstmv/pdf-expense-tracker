@@ -379,9 +379,10 @@ function parseAIResponse(aiResponse) {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 PDF Expense Tracker API running on http://localhost:${PORT}`);
-    console.log(`📄 Frontend available at http://localhost:${PORT}/expense-tracker.html`);
-    console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? '✅ Configured' : '❌ Missing'}`);
-});
+        console.log(`🚀 PDF Expense Tracker API running on port ${PORT}`);
+        console.log(`📄 Frontend available at https://pdf-expense-tracker.vercel.app`);
+        console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? '✅ Configured' : '❌ Missing'}`);
+        console.log(`🌐 API URL: https://pdf-expense-tracker-api.onrender.com`);
+    });
 
 module.exports = app;
