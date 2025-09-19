@@ -12,7 +12,25 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' })); // Increase limit for PDF text
-app.use(express.static('.')); // Serve static files from current directory
+// Remove static file serving for production API-only backend
+if (process.env.NODE_ENV !== 'production') {
+    app.use(express.static('.')); // Only serve static files in development
+}
+
+// Root endpoint - API identification
+app.get('/', (req, res) => {
+    res.json({
+        name: 'PDF Expense Tracker API',
+        version: '1.0.0',
+        status: 'running',
+        endpoints: {
+            health: '/api/health',
+            extract: '/api/extract-transactions',
+            categorize: '/api/categorize-transactions'
+        },
+        frontend: 'https://pdf-expense-tracker.vercel.app'
+    });
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
