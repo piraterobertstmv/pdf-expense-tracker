@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Expense Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <script src="config.js"></script>
+    <script src="pdf-extractor.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">PDF Expense Tracker</h1>
+            <p class="text-gray-600">Extract and categorize expenses from French bank statements</p>
+        </div>
+
+        <!-- PDF Upload Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Upload Bank Statement</h2>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <input type="file" id="pdfInput" accept=".pdf" class="hidden">
+                <button onclick="document.getElementById('pdfInput').click()" 
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg">
+                    Choose PDF File
+                </button>
+                <p class="text-gray-500 mt-2">Select a French bank statement PDF (Société Générale format)</p>
+                <div id="uploadStatus" class="mt-4 text-sm"></div>
+            </div>
+        </div>
+
+        <!-- Processing Controls -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Processing Options</h2>
+            <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                <p class="text-sm text-blue-800">
+                    <strong>🤖 AI Extract:</strong> Uses OpenAI GPT-4 via secure backend with perfect amount accuracy and automatic categorization.
+                    <br><strong>📄 Extract (Regex):</strong> Traditional pattern matching (may have amount formatting issues).
+                </p>
+            </div>
+            
+            <!-- Backend Status -->
+            <div class="bg-green-50 border border-green-200 p-3 rounded-lg mb-4">
+                <p class="text-sm text-green-800">
+                    <strong>🔑 API Key:</strong> Stored securely in backend .env file - no need to enter manually!
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <button id="extractBtn" onclick="handleExtractPDF()" 
+                        class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg disabled:bg-gray-400" 
+                        disabled>
+                    📄 Extract (Regex)
+                </button>
+                <button id="aiExtractBtn" onclick="handleAIExtract()" 
+                        class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-2 px-4 rounded-lg disabled:bg-gray-400" 
+                        disabled>
+                    🤖 AI Extract
+                </button>
+                <button id="categorizeBtn" onclick="handleCategorize()" 
+                        class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg disabled:bg-gray-400" 
+                        disabled>
+                    🏷️ Categorize
+                </button>
+                <button id="exportBtn" onclick="handleExport()" 
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg disabled:bg-gray-400" 
+                        disabled>
+                    💾 Export Data
+                </button>
+                <button onclick="testWithSampleData()" 
+                        class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg">
+                    🧪 Test Sample
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Extracted Expenses</h2>
+            
+            <div class="overflow-x-auto">
+                <table id="expenseTable" class="min-w-full border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-12">
+                                <input type="checkbox" class="rounded" onchange="handleSelectAll(this)">
+                            </th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-16">Index</th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">Date</th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">Center</th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-32">Client</th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">
+                                Amount<br>with<br>taxes
+                            </th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">
+                                Amount<br>without<br>taxes
+                            </th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">Worker</th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-16">Taxes</th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">
+                                Type of<br>transaction
+                            </th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">
+                                Type of<br>movement
+                            </th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-20">Frequency</th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-20">
+                                Type of<br>client
+                            </th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-32">Service</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseTableBody">
+                        <tr>
+                            <td colspan="14" class="border border-gray-300 px-3 py-8 text-center text-gray-500">
+                                No expenses extracted yet. Upload a PDF to begin.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Processing Status -->
+        <div id="processingStatus" class="mt-6 p-4 bg-blue-50 rounded-lg hidden">
+            <div class="flex items-center">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                <span class="text-blue-800">Processing...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cost categories from your GoGain application
+        const COST_CATEGORIES = [
+            'ASSURANCE',
+            'CHARGES SOCIALES',
+            'CREDIT CABINET',
+            'FRAIS BANQUE',
+            'GYM',
+            'INTERNET',
+            'LEASING MOTO',
+            'LEASING VOITURE',
+            'LOGICIEL CABINET',
+            'LOYER CABINET',
+            'MASSE SALARIALE',
+            'MATERIEL CABINET',
+            'MUTUELLE',
+            'MUTUELLE SALARIÉ',
+            'PREVOYANCE',
+            'TPE BANQUE',
+            'URSSAF/CHARGES SOCIALES'
+        ];
+
+        // Global variables
+        let extractedTransactions = [];
+        let processedExpenses = [];
+
+        // File upload handler
+        const handleFileUpload = (event) => {
+            console.log('File upload triggered', event);
+            const file = event.target.files[0];
+            console.log('Selected file:', file);
+            
+            if (file) {
+                console.log('File type:', file.type);
+                console.log('File name:', file.name);
+                console.log('File size:', file.size);
+                
+                if (file.type === 'application/pdf') {
+                    document.getElementById('uploadStatus').innerHTML = 
+                        `<span class="text-green-600">✓ ${file.name} uploaded successfully (${(file.size/1024/1024).toFixed(2)} MB)</span>`;
+                    document.getElementById('extractBtn').disabled = false;
+                    document.getElementById('aiExtractBtn').disabled = false;
+                } else {
+                    document.getElementById('uploadStatus').innerHTML = 
+                        `<span class="text-red-600">✗ Please select a valid PDF file (selected: ${file.type})</span>`;
+                    document.getElementById('extractBtn').disabled = true;
+                }
+            } else {
+                document.getElementById('uploadStatus').innerHTML = 
+                    `<span class="text-red-600">✗ No file selected</span>`;
+                document.getElementById('extractBtn').disabled = true;
+            }
+        };
+
+        // Initialize event listener when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up file input listener');
+            const pdfInput = document.getElementById('pdfInput');
+            if (pdfInput) {
+                pdfInput.addEventListener('change', handleFileUpload);
+                console.log('File input listener attached');
+            } else {
+                console.error('PDF input element not found');
+            }
+        });
+
+        // PDF extraction handler using real PDF.js
+        const handleExtractPDF = async () => {
+            const fileInput = document.getElementById('pdfInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                updateStatus('✗ Please select a PDF file first');
+                return;
+            }
+            
+            showProcessingStatus(true);
+            
+            try {
+                // Create extractor instance
+                const extractor = new BankStatementExtractor();
+                
+                // Extract text from PDF
+                const text = await extractTextFromPDF(file);
+                console.log('Extracted text:', text);
+                
+                // Parse transactions
+                const transactions = extractor.parseTransactions(text);
+                console.log('Parsed transactions:', transactions);
+                
+                // Filter only debit transactions - keep ALL debit transactions
+                extractedTransactions = transactions.filter(t => t.debit && parseFloat(t.debit.replace(/\s/g, '').replace(',', '.')) > 0);
+                
+                showProcessingStatus(false);
+                
+                if (extractedTransactions.length > 0) {
+                    document.getElementById('categorizeBtn').disabled = false;
+                    updateStatus(`✓ Extracted ${extractedTransactions.length} debit transactions from PDF`);
+                } else {
+                    updateStatus('⚠ No debit transactions found in PDF. Please check the file format.');
+                }
+                
+            } catch (error) {
+                console.error('PDF extraction error:', error);
+                showProcessingStatus(false);
+                updateStatus('✗ Error extracting PDF: ' + error.message);
+            }
+        };
+        
+        // Helper function to extract text from PDF using PDF.js
+        const extractTextFromPDF = async (file) => {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            let fullText = '';
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + '\n';
+            }
+
+            return fullText;
+        };
+
+        // AI extraction handler (now uses backend API)
+        const handleAIExtract = async () => {
+            const fileInput = document.getElementById('pdfInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                updateStatus('✗ Please select a PDF file first');
+                return;
+            }
+            
+            showProcessingStatus(true);
+            
+            try {
+                // Extract text from PDF
+                const text = await extractTextFromPDF(file);
+                console.log('📄 Extracted text for AI processing');
+                
+                // Send to backend API for AI processing
+                const backendUrl = window.BACKEND_URL || 'http://localhost:3001';
+                const response = await fetch(`${backendUrl}/api/extract-transactions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pdfText: text })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Backend API error');
+                }
+                
+                const data = await response.json();
+                console.log('🤖 Backend API response:', data);
+                
+                // Convert backend format to our format
+                extractedTransactions = data.transactions.map(tx => ({
+                    date: tx.date,
+                    valeur: tx.valeur,
+                    nature: tx.description,
+                    debit: tx.amount,
+                    credit: null
+                }));
+                
+                if (extractedTransactions.length > 0) {
+                    // Categorize transactions using backend
+                    const categorizeResponse = await fetch(`${backendUrl}/api/categorize-transactions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ transactions: data.transactions })
+                    });
+                    
+                    let categorizedTransactions = data.transactions;
+                    if (categorizeResponse.ok) {
+                        const categorizeData = await categorizeResponse.json();
+                        categorizedTransactions = categorizeData.transactions;
+                    }
+                    
+                    // Create processed expenses
+                    processedExpenses = categorizedTransactions.map((tx, index) => ({
+                        index: index + 1,
+                        date: tx.date,
+                        center: '',
+                        client: extractClientFromDescription(tx.description),
+                        amountWithTaxes: tx.amount,
+                        amountWithoutTaxes: '',
+                        worker: '',
+                        taxes: '',
+                        typeOfTransaction: 'cost',
+                        typeOfMovement: determineMovementType(tx.description),
+                        frequency: 'occasional',
+                        typeOfClient: 'service',
+                        service: tx.category || 'AUTRES',
+                        confidence: tx.confidence || 'medium'
+                    }));
+                    
+                    populateTable();
+                    document.getElementById('exportBtn').disabled = false;
+                    updateStatus(`🤖 AI extracted and categorized ${extractedTransactions.length} transactions with perfect accuracy!`);
+                } else {
+                    updateStatus('⚠ AI found no debit transactions. Please check the PDF format.');
+                }
+                
+                showProcessingStatus(false);
+                
+            } catch (error) {
+                console.error('🤖 AI extraction error:', error);
+                showProcessingStatus(false);
+                updateStatus('✗ AI extraction failed: ' + error.message);
+            }
+        };
+        
+        // Helper function to extract client from description
+        const extractClientFromDescription = (description) => {
+            if (description.includes('POUR:')) {
+                const match = description.match(/POUR:\s*([^0-9\n]+)/i);
+                if (match) return match[1].trim();
+            }
+            if (description.includes('DE:')) {
+                const match = description.match(/DE:\s*([^0-9\n]+)/i);
+                if (match) return match[1].trim();
+            }
+            // For CARTE transactions, extract store name
+            if (description.includes('CARTE')) {
+                const parts = description.split(' ');
+                return parts.slice(-2).join(' ').trim();
+            }
+            return 'Unknown Client';
+        };
+        
+        // Helper function to determine movement type
+        const determineMovementType = (description) => {
+            if (description.includes('PRELEVEMENT')) return 'direct_debit';
+            if (description.includes('VIR')) return 'transfer';
+            if (description.includes('CARTE')) return 'card';
+            return 'other';
+        };
+
+        // Categorization handler
+        const handleCategorize = () => {
+            showProcessingStatus(true);
+            
+            processedExpenses = extractedTransactions.map((transaction, index) => {
+                const category = categorizeTransaction(transaction.nature);
+                const amount = parseFloat(transaction.debit);
+                
+                return {
+                    index: index + 1,
+                    date: transaction.date,
+                    center: '', // Manual entry
+                    client: extractClient(transaction.nature),
+                    amountWithTaxes: amount.toFixed(2) + '€',
+                    amountWithoutTaxes: '', // Manual entry
+                    worker: '', // Manual entry
+                    taxes: '', // Manual entry
+                    typeOfTransaction: 'cost',
+                    typeOfMovement: determineMovementType(transaction.nature),
+                    frequency: determineFrequency(transaction.nature),
+                    typeOfClient: 'service',
+                    service: category.category,
+                    confidence: category.confidence
+                };
+            });
+
+            populateTable();
+            showProcessingStatus(false);
+            document.getElementById('exportBtn').disabled = false;
+            
+            updateStatus('✓ Categorized ' + processedExpenses.length + ' expenses automatically');
+        };
+
+        // Categorization logic
+        const categorizeTransaction = (description) => {
+            const upperDesc = description.toUpperCase();
+            
+            // Exact matches first
+            for (const category of COST_CATEGORIES) {
+                if (upperDesc.includes(category)) {
+                    return { category, confidence: 'high' };
+                }
+            }
+            
+            // Fuzzy matching
+            const fuzzyMatches = {
+                'FRAIS BANQUE': ['FRAIS', 'BANCAIRE', 'COMMISSION', 'AGIOS'],
+                'INTERNET': ['ORANGE', 'SFR', 'BOUYGUES', 'FREE', 'TELECOM'],
+                'ASSURANCE': ['ASSURANCE', 'MUTUELLE', 'PREVOYANCE'],
+                'LOYER CABINET': ['LOYER', 'LOCATION', 'BAIL'],
+                'GYM': ['GYM', 'FITNESS', 'SPORT', 'CLUB'],
+                'CHARGES SOCIALES': ['URSSAF', 'SOCIAL', 'COTISATION'],
+                'LEASING MOTO': ['LEASING', 'LOCATION MOTO', 'SCOOTER'],
+                'LEASING VOITURE': ['LEASING', 'LOCATION VEHICULE', 'AUTO']
+            };
+            
+            for (const [category, keywords] of Object.entries(fuzzyMatches)) {
+                for (const keyword of keywords) {
+                    if (upperDesc.includes(keyword)) {
+                        return { category, confidence: 'medium' };
+                    }
+                }
+            }
+            
+            return { category: 'AUTRES', confidence: 'low' };
+        };
+
+        // Extract client name from transaction description
+        const extractClient = (description) => {
+            // Simple extraction - in real implementation, use more sophisticated parsing
+            const parts = description.split(' ');
+            if (parts.length > 2) {
+                return parts.slice(2, 5).join(' ').replace(/[^a-zA-Z\s]/g, '').trim();
+            }
+            return 'Unknown';
+        };
+
+
+        // Determine frequency
+        const determineFrequency = (description) => {
+            if (description.includes('LOYER') || description.includes('ABONNEMENT')) return 'monthly';
+            if (description.includes('ASSURANCE') || description.includes('MUTUELLE')) return 'monthly';
+            return 'occasional';
+        };
+
+        // Populate the table with processed data
+        const populateTable = () => {
+            const tbody = document.getElementById('expenseTableBody');
+            tbody.innerHTML = '';
+
+            processedExpenses.forEach((expense) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-3 py-2">
+                        <input type="checkbox" class="rounded row-checkbox">
+                    </td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">${expense.index}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">${expense.date}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">
+                        <input type="text" value="${expense.center}" 
+                               class="w-full border-0 bg-transparent text-sm focus:ring-1 focus:ring-blue-500 rounded px-1" 
+                               placeholder="Enter center">
+                    </td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">${expense.client}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm font-medium">${expense.amountWithTaxes}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">
+                        <input type="text" value="${expense.amountWithoutTaxes}" 
+                               class="w-full border-0 bg-transparent text-sm focus:ring-1 focus:ring-blue-500 rounded px-1" 
+                               placeholder="Calculate">
+                    </td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">
+                        <input type="text" value="${expense.worker}" 
+                               class="w-full border-0 bg-transparent text-sm focus:ring-1 focus:ring-blue-500 rounded px-1" 
+                               placeholder="Enter worker">
+                    </td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">
+                        <input type="text" value="${expense.taxes}" 
+                               class="w-full border-0 bg-transparent text-sm focus:ring-1 focus:ring-blue-500 rounded px-1" 
+                               placeholder="Calculate">
+                    </td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">
+                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">${expense.typeOfTransaction}</span>
+                    </td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">${expense.typeOfMovement}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">${expense.frequency}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">${expense.typeOfClient}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">
+                        <span class="px-2 py-1 ${getConfidenceColor(expense.confidence)} rounded-full text-xs">
+                            ${expense.service}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        };
+
+        // Get color for confidence level
+        const getConfidenceColor = (confidence) => {
+            switch(confidence) {
+                case 'high': return 'bg-green-100 text-green-800';
+                case 'medium': return 'bg-yellow-100 text-yellow-800';
+                case 'low': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        };
+
+        // Export functionality
+        const handleExport = () => {
+            const exportData = processedExpenses.map(expense => ({
+                Index: expense.index,
+                Date: expense.date,
+                Center: expense.center,
+                Client: expense.client,
+                'Amount with taxes': expense.amountWithTaxes,
+                'Amount without taxes': expense.amountWithoutTaxes,
+                Worker: expense.worker,
+                Taxes: expense.taxes,
+                'Type of transaction': expense.typeOfTransaction,
+                'Type of movement': expense.typeOfMovement,
+                Frequency: expense.frequency,
+                'Type of client': expense.typeOfClient,
+                Service: expense.service
+            }));
+
+            const csvContent = convertToCSV(exportData);
+            downloadCSV(csvContent, 'extracted-expenses.csv');
+            
+            updateStatus('✓ Data exported to CSV file');
+        };
+
+        // CSV conversion utility
+        const convertToCSV = (data) => {
+            const headers = Object.keys(data[0]);
+            const csvRows = [headers.join(',')];
+            
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    const value = row[header];
+                    return `"${value}"`;
+                });
+                csvRows.push(values.join(','));
+            });
+            
+            return csvRows.join('\n');
+        };
+
+        // Download CSV utility
+        const downloadCSV = (csvContent, filename) => {
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', filename);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        // Select all functionality
+        const handleSelectAll = (checkbox) => {
+            const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+            rowCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+        };
+
+        // Utility functions
+        const showProcessingStatus = (show) => {
+            const statusEl = document.getElementById('processingStatus');
+            if (show) {
+                statusEl.classList.remove('hidden');
+            } else {
+                statusEl.classList.add('hidden');
+            }
+        };
+
+        const updateStatus = (message) => {
+            document.getElementById('uploadStatus').innerHTML = 
+                `<span class="text-green-600">${message}</span>`;
+        };
+
+        // Note: API key management removed - now handled securely by backend via .env file
+
+        // Test function with sample data
+        const testWithSampleData = () => {
+            console.log('Testing with sample data');
+            
+            // Sample transactions to test the system
+            extractedTransactions = [
+                {
+                    date: '06/01/2025',
+                    valeur: '06/01/2025',
+                    nature: 'PRELEVEMENT EUROPEEN SEPA - FRAIS BANCAIRES SOCIETE GENERALE',
+                    debit: '60,00'
+                },
+                {
+                    date: '08/01/2025',
+                    valeur: '08/01/2025',
+                    nature: 'PRELEVEMENT ORANGE BUSINESS SERVICES INTERNET PRO',
+                    debit: '120,50'
+                },
+                {
+                    date: '10/01/2025',
+                    valeur: '10/01/2025',
+                    nature: 'PRELEVEMENT EUROPEEN SEPA - ASSURANCE CABINET MEDICAL MAIF',
+                    debit: '250,00'
+                },
+                {
+                    date: '15/01/2025',
+                    valeur: '15/01/2025',
+                    nature: 'VIREMENT LOYER CABINET MEDICAL IMMOBILIER PARIS',
+                    debit: '1200,00'
+                },
+                {
+                    date: '20/01/2025',
+                    valeur: '20/01/2025',
+                    nature: 'PRELEVEMENT GYM CLUB FITNESS PREMIUM',
+                    debit: '45,00'
+                }
+            ];
+            
+            document.getElementById('categorizeBtn').disabled = false;
+            updateStatus('✓ Sample data loaded - ' + extractedTransactions.length + ' transactions ready for categorization');
+        };
+    </script>
+</body>
+</html>

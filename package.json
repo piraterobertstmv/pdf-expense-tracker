@@ -1,0 +1,26 @@
+{
+  "name": "pdf-expense-tracker",
+  "version": "1.0.0",
+  "description": "AI-powered PDF expense tracker for French bank statements",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo 'No build step required'",
+    "install-deps": "npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": ["pdf", "expense", "tracker", "ai", "openai", "french", "bank"],
+  "author": "Your Name",
+  "license": "MIT"
+}

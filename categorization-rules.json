@@ -1,0 +1,232 @@
+{
+  "costCategories": [
+    "ASSURANCE",
+    "CHARGES SOCIALES",
+    "CREDIT CABINET",
+    "FRAIS BANQUE", 
+    "GYM",
+    "INTERNET",
+    "LEASING MOTO",
+    "LEASING VOITURE",
+    "LOGICIEL CABINET",
+    "LOYER CABINET",
+    "MASSE SALARIALE",
+    "MATERIEL CABINET",
+    "MUTUELLE",
+    "MUTUELLE SALARIÉ",
+    "PREVOYANCE",
+    "TPE BANQUE",
+    "URSSAF/CHARGES SOCIALES"
+  ],
+  "categorizationRules": {
+    "FRAIS BANQUE": {
+      "exactMatches": ["FRAIS BANQUE", "FRAIS BANCAIRE", "COMMISSION BANCAIRE"],
+      "keywords": ["FRAIS", "BANCAIRE", "COMMISSION", "AGIOS", "COTISATION CARTE", "TENUE COMPTE"],
+      "patterns": ["FRAIS.*BANQUE", "COMMISSION.*BANC", "AGIOS.*DEBIT"],
+      "confidence": "high"
+    },
+    "INTERNET": {
+      "exactMatches": ["INTERNET", "ABONNEMENT INTERNET"],
+      "keywords": ["ORANGE", "SFR", "BOUYGUES", "FREE", "TELECOM", "INTERNET", "MOBILE", "TELEPHONE"],
+      "patterns": ["ORANGE.*BUSINESS", "SFR.*PRO", "BOUYGUES.*TELECOM", "FREE.*PRO"],
+      "confidence": "high"
+    },
+    "ASSURANCE": {
+      "exactMatches": ["ASSURANCE", "ASSURANCE CABINET"],
+      "keywords": ["ASSURANCE", "ASSUR", "MAIF", "MACIF", "AXA", "ALLIANZ", "GENERALI"],
+      "patterns": ["ASSURANCE.*CABINET", "ASSUR.*PROFESSIONNEL", "RESPONSABILITE.*CIVILE"],
+      "confidence": "high"
+    },
+    "LOYER CABINET": {
+      "exactMatches": ["LOYER CABINET", "LOCATION CABINET"],
+      "keywords": ["LOYER", "LOCATION", "BAIL", "IMMOBILIER", "CABINET", "LOCAL"],
+      "patterns": ["LOYER.*CABINET", "LOCATION.*LOCAL", "BAIL.*COMMERCIAL"],
+      "confidence": "high"
+    },
+    "GYM": {
+      "exactMatches": ["GYM", "SALLE DE SPORT"],
+      "keywords": ["GYM", "FITNESS", "SPORT", "CLUB", "SALLE DE SPORT", "MUSCULATION"],
+      "patterns": ["CLUB.*FITNESS", "SALLE.*SPORT", "GYM.*CLUB"],
+      "confidence": "medium"
+    },
+    "CHARGES SOCIALES": {
+      "exactMatches": ["CHARGES SOCIALES", "URSSAF"],
+      "keywords": ["URSSAF", "SOCIAL", "COTISATION", "SECU", "RETRAITE", "POLE EMPLOI"],
+      "patterns": ["URSSAF.*COTISATION", "CHARGES.*SOCIALE", "COTISATION.*RETRAITE"],
+      "confidence": "high"
+    },
+    "LEASING MOTO": {
+      "exactMatches": ["LEASING MOTO", "LOCATION MOTO"],
+      "keywords": ["LEASING", "LOCATION", "MOTO", "SCOOTER", "DEUX ROUES"],
+      "patterns": ["LEASING.*MOTO", "LOCATION.*SCOOTER", "CREDIT.*MOTO"],
+      "confidence": "medium"
+    },
+    "LEASING VOITURE": {
+      "exactMatches": ["LEASING VOITURE", "LOCATION VEHICULE"],
+      "keywords": ["LEASING", "LOCATION", "VEHICULE", "AUTO", "VOITURE", "AUTOMOBILE"],
+      "patterns": ["LEASING.*AUTO", "LOCATION.*VEHICULE", "CREDIT.*AUTO"],
+      "confidence": "medium"
+    },
+    "MUTUELLE": {
+      "exactMatches": ["MUTUELLE", "COMPLEMENTAIRE SANTE"],
+      "keywords": ["MUTUELLE", "COMPLEMENTAIRE", "SANTE", "MEDICAL", "HARMONIE", "MALAKOFF"],
+      "patterns": ["MUTUELLE.*SANTE", "COMPLEMENTAIRE.*SANTE", "ASSURANCE.*SANTE"],
+      "confidence": "high"
+    },
+    "MUTUELLE SALARIÉ": {
+      "exactMatches": ["MUTUELLE SALARIE", "MUTUELLE EMPLOYE"],
+      "keywords": ["MUTUELLE", "SALARIE", "EMPLOYE", "PERSONNEL"],
+      "patterns": ["MUTUELLE.*SALARIE", "MUTUELLE.*EMPLOYE", "SANTE.*PERSONNEL"],
+      "confidence": "high"
+    },
+    "MATERIEL CABINET": {
+      "exactMatches": ["MATERIEL CABINET", "EQUIPEMENT CABINET"],
+      "keywords": ["MATERIEL", "EQUIPEMENT", "FOURNITURE", "MOBILIER", "INSTRUMENT"],
+      "patterns": ["MATERIEL.*MEDICAL", "EQUIPEMENT.*CABINET", "FOURNITURE.*BUREAU"],
+      "confidence": "medium"
+    },
+    "LOGICIEL CABINET": {
+      "exactMatches": ["LOGICIEL CABINET", "SOFTWARE MEDICAL"],
+      "keywords": ["LOGICIEL", "SOFTWARE", "LICENCE", "ABONNEMENT", "INFORMATIQUE"],
+      "patterns": ["LOGICIEL.*MEDICAL", "SOFTWARE.*CABINET", "LICENCE.*SOFT", "ABONNEMENT.*INFORMATIQUE"],
+      "confidence": "medium"
+    },
+    "PREVOYANCE": {
+      "exactMatches": ["PREVOYANCE", "ASSURANCE PREVOYANCE"],
+      "keywords": ["PREVOYANCE", "DECES", "INVALIDITE", "INCAPACITE"],
+      "patterns": ["PREVOYANCE.*DECES", "ASSURANCE.*INVALIDITE", "GARANTIE.*INCAPACITE"],
+      "confidence": "high"
+    },
+    "TPE BANQUE": {
+      "exactMatches": ["TPE BANQUE", "TERMINAL PAIEMENT"],
+      "keywords": ["TPE", "TERMINAL", "PAIEMENT", "CARTE", "MONETIQUE"],
+      "patterns": ["TPE.*BANQUE", "TERMINAL.*PAIEMENT", "LOCATION.*TPE"],
+      "confidence": "high"
+    },
+    "CREDIT CABINET": {
+      "exactMatches": ["CREDIT CABINET", "PRET PROFESSIONNEL"],
+      "keywords": ["CREDIT", "PRET", "EMPRUNT", "FINANCEMENT"],
+      "patterns": ["CREDIT.*CABINET", "PRET.*PROFESSIONNEL", "EMPRUNT.*IMMOBILIER"],
+      "confidence": "high"
+    },
+    "MASSE SALARIALE": {
+      "exactMatches": ["MASSE SALARIALE", "SALAIRE", "PAIE"],
+      "keywords": ["SALAIRE", "PAIE", "REMUNERATION", "EMPLOYE", "PERSONNEL"],
+      "patterns": ["VIREMENT.*SALAIRE", "PAIE.*EMPLOYE", "REMUNERATION.*PERSONNEL"],
+      "confidence": "high"
+    }
+  },
+  "clientExtractionRules": {
+    "prefixesToRemove": [
+      "PRELEVEMENT",
+      "VIREMENT", 
+      "PAIEMENT",
+      "EUROPEEN",
+      "SEPA",
+      "AUTOMATIQUE",
+      "MENSUEL",
+      "DE",
+      "DU",
+      "LA",
+      "LE",
+      "LES"
+    ],
+    "stopWords": [
+      "POUR",
+      "PAR",
+      "AVEC",
+      "SANS",
+      "DANS",
+      "SUR",
+      "SOUS",
+      "ENTRE",
+      "CHEZ"
+    ],
+    "companyIndicators": [
+      "SA",
+      "SARL", 
+      "SAS",
+      "SASU",
+      "EURL",
+      "SNC",
+      "BUSINESS",
+      "SERVICES",
+      "GROUP",
+      "COMPANY"
+    ]
+  },
+  "movementTypeRules": {
+    "direct_debit": ["PRELEVEMENT", "PRELEV", "SEPA"],
+    "transfer": ["VIREMENT", "VIR", "TRANSFER"],
+    "card": ["CARTE", "CB", "CARD", "PAIEMENT CARTE"],
+    "check": ["CHEQUE", "CHQ"],
+    "cash": ["ESPECE", "LIQUIDE", "CASH"],
+    "other": ["DIVERS", "AUTRE", "UNKNOWN"]
+  },
+  "frequencyRules": {
+    "monthly": [
+      "LOYER",
+      "ABONNEMENT", 
+      "ASSURANCE",
+      "MUTUELLE",
+      "INTERNET",
+      "TELEPHONE",
+      "ELECTRICITE",
+      "GAZ",
+      "EAU"
+    ],
+    "quarterly": [
+      "URSSAF",
+      "IMPOT",
+      "TAXE",
+      "TVA"
+    ],
+    "annual": [
+      "ASSURANCE ANNUELLE",
+      "LICENCE ANNUELLE",
+      "ABONNEMENT ANNUEL"
+    ],
+    "occasional": [
+      "ACHAT",
+      "FACTURE",
+      "REPARATION",
+      "MAINTENANCE",
+      "MATERIEL",
+      "EQUIPEMENT"
+    ]
+  },
+  "confidenceLevels": {
+    "high": {
+      "description": "Exact match or very specific keyword match",
+      "threshold": 0.9,
+      "color": "green"
+    },
+    "medium": {
+      "description": "Fuzzy match or partial keyword match", 
+      "threshold": 0.6,
+      "color": "yellow"
+    },
+    "low": {
+      "description": "Weak match or fallback category",
+      "threshold": 0.3,
+      "color": "red"
+    }
+  },
+  "dateFormats": {
+    "french": "DD/MM/YYYY",
+    "iso": "YYYY-MM-DD",
+    "us": "MM/DD/YYYY"
+  },
+  "amountFormats": {
+    "french": {
+      "decimal": ",",
+      "thousands": " ",
+      "pattern": "\\d{1,3}(?:\\s\\d{3})*,\\d{2}"
+    },
+    "standard": {
+      "decimal": ".",
+      "thousands": "",
+      "pattern": "\\d+\\.\\d{2}"
+    }
+  }
+}
