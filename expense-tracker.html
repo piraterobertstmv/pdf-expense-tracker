@@ -209,6 +209,22 @@
             }
         };
 
+        // Map transaction description to movement type for GoGain
+        const mapMovementType = (description) => {
+            if (!description) return 'other';
+            
+            const desc = description.toUpperCase();
+            
+            if (desc.includes('VIR') || desc.includes('VIREMENT')) return 'bank transfer';
+            if (desc.includes('CARTE') || desc.includes('CB')) return 'card payment';
+            if (desc.includes('PRELEVEMENT') || desc.includes('PRELEV')) return 'direct debit';
+            if (desc.includes('CHEQUE')) return 'check';
+            if (desc.includes('ESPECES') || desc.includes('CASH')) return 'cash';
+            if (desc.includes('REMISE')) return 'deposit';
+            
+            return 'other';
+        };
+
         // Send extracted transactions to GoGain
         const sendToGoGain = async (transactions) => {
             console.log('🔍 sendToGoGain called with:', {
@@ -234,19 +250,17 @@
                 
                 const payload = {
                     transactions: transactions.map(tx => ({
-                        date: tx.date,
-                        description: tx.description || tx.nature,
+                        date: tx.date, // GoGain will convert to Date object and ISO format
+                        description: tx.description || tx.nature, // Full transaction description
                         cost: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
-                        amountWithTaxes: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
-                        amountWithoutTaxes: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
                         taxes: 0, // Always 0% as specified
-                        category: tx.category || tx.service,
-                        clientName: tx.clientName || tx.client,
-                        typeOfTransaction: 'cost', // Always cost for expenses
-                        typeOfMovement: tx.typeOfMovement || 'occasional',
-                        frequency: tx.frequency || 'occasional',
-                        typeOfClient: tx.typeOfClient || 'service',
-                        confidence: tx.confidence || 'medium'
+                        typeOfTransaction: 'cost', // Always cost for PDF expenses
+                        typeOfMovement: mapMovementType(tx.description || tx.nature), // Map based on description
+                        frequency: 'ordinary', // Default frequency for PDF imports
+                        typeOfClient: 'client', // Default client type
+                        clientName: tx.clientName || tx.client, // For auto-client creation
+                        serviceName: tx.category || tx.service, // For service mapping
+                        confidence: tx.confidence || 'medium' // AI confidence level
                     }))
                 };
                 
@@ -815,17 +829,13 @@
                 processedExpenses = [{
                     index: 1,
                     date: '06/01/2025',
-                    center: '', // Will be assigned by GoGain based on user's centers
+                    description: 'CARTE X2148 01/01 TEST TRANSACTION',
                     client: 'TEST CLIENT',
                     amountWithTaxes: '100,00',
-                    amountWithoutTaxes: '100,00', // Same as amountWithTaxes
-                    worker: '', // Will be assigned by GoGain based on JWT token user
-                    taxes: 0, // Always 0%
-                    typeOfTransaction: 'cost',
-                    typeOfMovement: 'occasional',
-                    frequency: 'occasional',
-                    typeOfClient: 'service',
                     service: 'TEST CATEGORY',
+                    typeOfMovement: 'card payment',
+                    frequency: 'ordinary',
+                    typeOfClient: 'client',
                     confidence: 'high'
                 }];
             }
