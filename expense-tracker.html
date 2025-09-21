@@ -236,9 +236,16 @@
                     transactions: transactions.map(tx => ({
                         date: tx.date,
                         description: tx.description || tx.nature,
-                        amount: tx.amount || tx.debit,
+                        cost: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
+                        amountWithTaxes: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
+                        amountWithoutTaxes: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
+                        taxes: 0, // Always 0% as specified
                         category: tx.category || tx.service,
                         clientName: tx.clientName || tx.client,
+                        typeOfTransaction: 'cost', // Always cost for expenses
+                        typeOfMovement: tx.typeOfMovement || 'occasional',
+                        frequency: tx.frequency || 'occasional',
+                        typeOfClient: tx.typeOfClient || 'service',
                         confidence: tx.confidence || 'medium'
                     }))
                 };
@@ -808,12 +815,12 @@
                 processedExpenses = [{
                     index: 1,
                     date: '06/01/2025',
-                    center: '',
+                    center: '', // Will be assigned by GoGain based on user's centers
                     client: 'TEST CLIENT',
                     amountWithTaxes: '100,00',
-                    amountWithoutTaxes: '',
-                    worker: '',
-                    taxes: '',
+                    amountWithoutTaxes: '100,00', // Same as amountWithTaxes
+                    worker: '', // Will be assigned by GoGain based on JWT token user
+                    taxes: 0, // Always 0%
                     typeOfTransaction: 'cost',
                     typeOfMovement: 'occasional',
                     frequency: 'occasional',
