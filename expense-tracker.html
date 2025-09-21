@@ -76,6 +76,10 @@
                         class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg">
                     🧪 Test Sample
                 </button>
+                <button onclick="testGoGainIntegration()" 
+                        class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg">
+                    🔗 Test GoGain
+                </button>
             </div>
         </div>
 
@@ -169,6 +173,14 @@
             goGainToken = urlParams.get('token');
             goGainBackendUrl = urlParams.get('backend') || 'https://gogain-backend.onrender.com';
             
+            console.log('🔍 GoGain Integration Initialization:', {
+                hasToken: !!goGainToken,
+                tokenLength: goGainToken ? goGainToken.length : 0,
+                tokenPreview: goGainToken ? goGainToken.substring(0, 20) + '...' : 'none',
+                backendUrl: goGainBackendUrl,
+                allParams: Object.fromEntries(urlParams)
+            });
+            
             if (goGainToken) {
                 console.log('🔗 GoGain integration enabled');
                 // Show integration status
@@ -177,7 +189,20 @@
                     <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg mt-2">
                         <p class="text-sm text-blue-800">
                             <strong>🔗 Connected to GoGain</strong><br>
+                            Backend: ${goGainBackendUrl}<br>
+                            Token: ${goGainToken.substring(0, 20)}...<br>
                             Transactions will be automatically imported after extraction.
+                        </p>
+                    </div>
+                `;
+            } else {
+                console.log('ℹ️ No GoGain token found - running in standalone mode');
+                const statusDiv = document.getElementById('uploadStatus');
+                statusDiv.innerHTML = `
+                    <div class="bg-gray-50 border border-gray-200 p-3 rounded-lg mt-2">
+                        <p class="text-sm text-gray-600">
+                            <strong>📄 Standalone Mode</strong><br>
+                            Add ?token=JWT_TOKEN to URL for GoGain integration
                         </p>
                     </div>
                 `;
@@ -186,13 +211,41 @@
 
         // Send extracted transactions to GoGain
         const sendToGoGain = async (transactions) => {
+            console.log('🔍 sendToGoGain called with:', {
+                hasToken: !!goGainToken,
+                tokenLength: goGainToken ? goGainToken.length : 0,
+                backendUrl: goGainBackendUrl,
+                transactionCount: transactions.length
+            });
+            
             if (!goGainToken) {
-                console.log('No GoGain token - skipping integration');
+                console.log('❌ No GoGain token - skipping integration');
+                updateStatus('⚠️ No GoGain token found - integration skipped');
+                return false;
+            }
+
+            if (!transactions || transactions.length === 0) {
+                console.log('❌ No transactions to send');
                 return false;
             }
 
             try {
                 console.log('📤 Sending transactions to GoGain...', transactions);
+                
+                const payload = {
+                    transactions: transactions.map(tx => ({
+                        date: tx.date,
+                        description: tx.description || tx.nature,
+                        amount: tx.amount || tx.debit,
+                        category: tx.category || tx.service,
+                        clientName: tx.clientName || tx.client,
+                        confidence: tx.confidence || 'medium'
+                    }))
+                };
+                
+                console.log('🔍 Sending payload to GoGain:', payload);
+                console.log('🔍 Request URL:', `${goGainBackendUrl}/api/import-pdf-transactions`);
+                console.log('🔍 Token preview:', goGainToken.substring(0, 20) + '...');
                 
                 const response = await fetch(`${goGainBackendUrl}/api/import-pdf-transactions`, {
                     method: 'POST',
@@ -200,16 +253,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${goGainToken}`
                     },
-                    body: JSON.stringify({
-                        transactions: transactions.map(tx => ({
-                            date: tx.date,
-                            description: tx.description || tx.nature,
-                            amount: tx.amount || tx.debit,
-                            category: tx.category || tx.service,
-                            clientName: tx.clientName || tx.client,
-                            confidence: tx.confidence || 'medium'
-                        }))
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
@@ -232,9 +276,17 @@
                     
                     return true;
                 } else {
-                    const error = await response.json();
-                    console.error('❌ GoGain import failed:', error);
-                    updateStatus(`❌ GoGain import failed: ${error.message || 'Unknown error'}`);
+                    console.error('❌ GoGain API response not OK:', response.status, response.statusText);
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const error = await response.json();
+                        console.error('❌ GoGain error details:', error);
+                        errorMessage = error.message || error.error || errorMessage;
+                    } catch (e) {
+                        console.error('❌ Could not parse error response:', e);
+                        errorMessage = `${errorMessage} - ${response.statusText}`;
+                    }
+                    updateStatus(`❌ GoGain import failed: ${errorMessage}`);
                     return false;
                 }
             } catch (error) {
@@ -736,6 +788,43 @@
             
             document.getElementById('categorizeBtn').disabled = false;
             updateStatus('✓ Sample data loaded - ' + extractedTransactions.length + ' transactions ready for categorization');
+        };
+
+        // Test GoGain integration
+        const testGoGainIntegration = () => {
+            console.log('🧪 Testing GoGain integration...');
+            
+            // Show current state
+            console.log('Current state:', {
+                hasToken: !!goGainToken,
+                tokenPreview: goGainToken ? goGainToken.substring(0, 20) + '...' : 'none',
+                backendUrl: goGainBackendUrl,
+                processedExpensesCount: processedExpenses.length
+            });
+            
+            // Test with sample data if no processed expenses
+            if (processedExpenses.length === 0) {
+                console.log('No processed expenses, creating test data...');
+                processedExpenses = [{
+                    index: 1,
+                    date: '06/01/2025',
+                    center: '',
+                    client: 'TEST CLIENT',
+                    amountWithTaxes: '100,00',
+                    amountWithoutTaxes: '',
+                    worker: '',
+                    taxes: '',
+                    typeOfTransaction: 'cost',
+                    typeOfMovement: 'occasional',
+                    frequency: 'occasional',
+                    typeOfClient: 'service',
+                    service: 'TEST CATEGORY',
+                    confidence: 'high'
+                }];
+            }
+            
+            // Trigger GoGain send
+            sendToGoGain(processedExpenses);
         };
     </script>
     
