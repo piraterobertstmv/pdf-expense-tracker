@@ -209,6 +209,22 @@
             }
         };
 
+        // Convert French date format to ISO date string
+        const convertToISODate = (dateStr) => {
+            if (!dateStr) return new Date().toISOString();
+            
+            // Handle DD/MM/YYYY format (French bank statements)
+            if (dateStr.includes('/')) {
+                const [day, month, year] = dateStr.split('/');
+                const date = new Date(year, month - 1, day);
+                return date.toISOString();
+            }
+            
+            // If already in ISO format or other format, try to parse
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+        };
+
         // Map transaction description to movement type for GoGain
         const mapMovementType = (description) => {
             if (!description) return 'other';
@@ -250,7 +266,7 @@
                 
                 const payload = {
                     transactions: transactions.map(tx => ({
-                        date: tx.date, // GoGain will convert to Date object and ISO format
+                        date: convertToISODate(tx.date), // Convert to proper ISO format
                         description: tx.description || tx.nature, // Full transaction description
                         cost: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
                         taxes: 0, // Always 0% as specified
@@ -267,6 +283,7 @@
                 console.log('🔍 Sending payload to GoGain:', payload);
                 console.log('🔍 Request URL:', `${goGainBackendUrl}/api/import-pdf-transactions`);
                 console.log('🔍 Token preview:', goGainToken.substring(0, 20) + '...');
+                console.log('🔍 Sample transaction data:', payload.transactions[0]);
                 
                 const response = await fetch(`${goGainBackendUrl}/api/import-pdf-transactions`, {
                     method: 'POST',
