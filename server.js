@@ -446,6 +446,7 @@ function parseAIResponse(aiResponse) {
             valeur: tx.valeur || tx.date,
             description: tx.description,
             amount: tx.amount,
+            client: tx.client, // Include AI-extracted client name
             type: tx.type || 'debit'
         }));
         
