@@ -88,10 +88,31 @@ app.post('/api/extract-transactions', async (req, res) => {
         });
 
         if (!response.ok) {
-            const errorData = await response.text();
-            console.error('OpenAI API error:', response.status, errorData);
+            let errorMessage = `HTTP ${response.status}`;
+            
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error?.message || errorMessage;
+                
+                // Handle specific OpenAI errors with user-friendly messages
+                if (response.status === 503) {
+                    errorMessage = 'OpenAI API is temporarily unavailable. Please try again in a few minutes.';
+                } else if (response.status === 429) {
+                    errorMessage = 'OpenAI API rate limit exceeded. Please try again later.';
+                } else if (response.status === 401) {
+                    errorMessage = 'OpenAI API authentication failed. Please check API key.';
+                } else if (response.status === 500) {
+                    errorMessage = 'OpenAI API internal error. Please try again.';
+                }
+            } catch (parseError) {
+                // If we can't parse the error, use status text
+                errorMessage = response.statusText || errorMessage;
+            }
+            
+            console.error('❌ OpenAI API Error:', response.status, errorMessage);
             return res.status(response.status).json({ 
-                error: `OpenAI API error: ${response.status} ${response.statusText}` 
+                error: `OpenAI API error: ${errorMessage}`,
+                details: 'The AI service is temporarily unavailable. Please try again in a few minutes.'
             });
         }
 
@@ -162,6 +183,34 @@ app.post('/api/categorize-transactions', async (req, res) => {
                 max_tokens: 4000
             })
         });
+
+        if (!response.ok) {
+            let errorMessage = `HTTP ${response.status}`;
+            
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error?.message || errorMessage;
+                
+                // Handle specific OpenAI errors
+                if (response.status === 503) {
+                    errorMessage = 'OpenAI API is temporarily unavailable. Please try again in a few minutes.';
+                } else if (response.status === 429) {
+                    errorMessage = 'OpenAI API rate limit exceeded. Please try again later.';
+                } else if (response.status === 401) {
+                    errorMessage = 'OpenAI API authentication failed. Please check API key.';
+                } else if (response.status === 500) {
+                    errorMessage = 'OpenAI API internal error. Please try again.';
+                }
+            } catch (parseError) {
+                errorMessage = response.statusText || errorMessage;
+            }
+            
+            console.error('❌ OpenAI Categorization API Error:', response.status, errorMessage);
+            return res.status(response.status).json({ 
+                error: `OpenAI API error: ${errorMessage}`,
+                details: 'The AI categorization service is temporarily unavailable. Please try again in a few minutes.'
+            });
+        }
 
         const data = await response.json();
         const categorizedData = JSON.parse(data.choices[0].message.content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
