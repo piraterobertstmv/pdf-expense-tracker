@@ -570,6 +570,7 @@
                     valeur: tx.valeur,
                     nature: tx.description,
                     debit: tx.amount,
+                    client: tx.client, // AI-extracted client name
                     credit: null
                 }));
                 
@@ -594,15 +595,15 @@
                         index: index + 1,
                         date: tx.date,
                         center: '',
-                        client: extractClientFromDescription(tx.description),
+                        client: tx.client || 'UNKNOWN', // Use AI-extracted client name
                         amountWithTaxes: tx.amount,
                         amountWithoutTaxes: '',
                         worker: '',
                         taxes: '',
                         typeOfTransaction: 'cost',
                         typeOfMovement: determineMovementType(tx.description),
-                        frequency: 'occasional',
-                        typeOfClient: 'service',
+                        frequency: 'ordinary',
+                        typeOfClient: 'client',
                         service: tx.category || 'AUTRES',
                         confidence: tx.confidence || 'medium'
                     }));

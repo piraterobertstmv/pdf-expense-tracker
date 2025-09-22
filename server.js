@@ -282,14 +282,42 @@ EXTRACTION PROCESS:
 3. ONLY extract if amount is in DÉBIT column
 4. Preserve exact French formatting: "2 000,00", "1 360,46", "89,50"
 
+CLIENT EXTRACTION RULES:
+Extract clear client names from transaction descriptions. NEVER use "Unknown Client".
+
+CLIENT IDENTIFICATION PATTERNS:
+✅ "VIR INSTANTANE EMIS NET POUR: [NAME]" → Client = [NAME]
+✅ "PRELEVEMENT EUROPEEN DE: [COMPANY]" → Client = [COMPANY] 
+✅ "CARTE X2148 DD/MM [STORE NAME]" → Client = [STORE NAME]
+✅ "PRELEVEMENT [SERVICE PROVIDER]" → Client = [SERVICE PROVIDER]
+✅ "[COMPANY NAME] REF: [NUMBER]" → Client = [COMPANY NAME]
+✅ "TPE [MERCHANT NAME]" → Client = [MERCHANT NAME]
+
+COMMON CLIENT PATTERNS:
+- Business names: "CARREFOUR CITY", "MAGASINS NICOL", "SUMUP"
+- Service providers: "ORANGE BUSINESS SERVICES", "SOCIETE GENERALE"
+- People names: "M. JORGE GOENAGA PEREZ", "Ana STEFANOVIC"
+- Government: "URSSAF", "DGFIP", "IMPOTS"
+- Banks: "SOCIETE GENERALE", "BNP PARIBAS"
+
+CLIENT EXTRACTION EXAMPLES:
+"CARTE X2148 01/02 SUMUP" → Client: "SUMUP"
+"VIR INSTANTANE EMIS NET POUR: Ana STEFANOVIC" → Client: "Ana STEFANOVIC"  
+"PRELEVEMENT EUROPEEN ORANGE BUSINESS SERVICES" → Client: "ORANGE BUSINESS SERVICES"
+"TPE BANQUE SOCIETE GENERALE" → Client: "SOCIETE GENERALE"
+"PRELEVEMENT 325960010 URSSAF" → Client: "URSSAF"
+
+If client name is unclear, use the main business/service mentioned in description.
+
 Return ONLY DÉBIT transactions in this JSON format:
 {
   "transactions": [
     {
       "date": "02/01/2025",
-      "valeur": "02/01/2025",
+      "valeur": "02/01/2025", 
       "description": "VIR INSTANTANE EMIS NET POUR: M. JORGE GOENAGA PEREZ",
       "amount": "2 000,00",
+      "client": "M. JORGE GOENAGA PEREZ",
       "type": "debit"
     }
   ]
