@@ -370,7 +370,7 @@
                         cost: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s]/g, '').replace(',', '.')),
                         taxes: 0, // Always 0% as specified
                         typeOfTransaction: 'cost', // Valid: ["revenue", "cost"] - always cost for expenses
-                        typeOfMovement: mapMovementType(tx.description || tx.nature), // Valid: ["card", "cash", "bank check", "transfer", "other"]
+                        typeOfMovement: tx.typeOfMovement === 'bank transfer' ? 'transfer' : (tx.typeOfMovement || mapMovementType(tx.description || tx.nature)), // Convert "bank transfer" to "transfer" for GoGain
                         frequency: 'ordinary', // Valid: ["ordinary", "exceptional"] - default to ordinary
                         typeOfClient: 'client', // Valid: ["client", "supplier"] - matching GoGain table structure
                         clientName: tx.clientName || tx.client, // For auto-client creation
@@ -385,6 +385,11 @@
                 console.log('🔍 Request URL:', `${goGainBackendUrl}/api/import-pdf-transactions`);
                 console.log('🔍 Token preview:', goGainToken.substring(0, 20) + '...');
                 console.log('🔍 Sample transaction data:', payload.transactions[0]);
+                console.log('🔍 Movement type mappings:', payload.transactions.map(tx => ({
+                    description: tx.description,
+                    originalMovement: transactions.find(orig => orig.description === tx.description)?.typeOfMovement,
+                    finalMovement: tx.typeOfMovement
+                })));
                 console.log('🔍 Service mappings:', payload.transactions.map(tx => ({
                     category: tx.serviceName,
                     serviceId: tx.service
