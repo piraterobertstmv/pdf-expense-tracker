@@ -217,58 +217,78 @@
             }
         };
 
-        // GoGain service mapping - map categories to GoGain service IDs
+        // GoGain service mapping - map categories to GoGain service IDs for COST transactions
         const mapCategoryToServiceId = (category) => {
             if (!category) return '673a9f7055ac0d45f4788235'; // Default to ASSURANCE
             
             const categoryUpper = category.toUpperCase();
             
-            // Business expenses
+            // Cost service mappings - exact mapping to GoGain service IDs
+            const costMappings = {
+                "ASSURANCE": "673a9f7055ac0d45f4788235",
+                "CHARGES SOCIALES": "673a9f7755ac0d45f47882a6", 
+                "CREDIT CABINET": "673a9f7c55ac0d45f47882df",
+                "FRAIS BANQUE": "673a9f8255ac0d45f4788318",
+                "GYM": "673a9f8755ac0d45f4788351",
+                "INTERNET": "673a9f8b55ac0d45f478838a",
+                "LEASING MOTO": "673a9f9055ac0d45f47883c3",
+                "LEASING VOITURE": "673a9f9455ac0d45f47883fc",
+                "LOGICIEL CABINET": "673a9f9855ac0d45f4788435",
+                "LOYER CABINET": "673a9f9c55ac0d45f478846e", 
+                "MASSE SALARIALE": "673a9fa155ac0d45f47884a7",
+                "MATERIEL CABINET": "673a9fa555ac0d45f47884e0",
+                "MUTUELLE": "673a9faa55ac0d45f4788519",
+                "MUTUELLE SALARIÉ": "673a9faf55ac0d45f4788552",
+                "PREVOYANCE": "673a9fb655ac0d45f478858b",
+                "TPE BANQUE": "673a9fba55ac0d45f47885c4",
+                "URSSAF/CHARGES SOCIALES": "673a9fbf55ac0d45f47885fd"
+            };
+            
+            // Try exact match first
+            for (const [serviceName, serviceId] of Object.entries(costMappings)) {
+                if (categoryUpper.includes(serviceName.toUpperCase())) {
+                    return serviceId;
+                }
+            }
+            
+            // Fallback matching with keywords
             if (categoryUpper.includes('ASSURANCE') || categoryUpper.includes('INSURANCE')) 
-                return '673a9f7055ac0d45f4788235'; // ASSURANCE
+                return costMappings["ASSURANCE"];
             if (categoryUpper.includes('CHARGES SOCIALES') || categoryUpper.includes('SOCIAL')) 
-                return '673a9f7755ac0d45f47882a6'; // CHARGES SOCIALES
+                return costMappings["CHARGES SOCIALES"];
             if (categoryUpper.includes('FRAIS BANQUE') || categoryUpper.includes('BANK') || categoryUpper.includes('BANQUE')) 
-                return '673a9f8255ac0d45f4788318'; // FRAIS BANQUE
+                return costMappings["FRAIS BANQUE"];
             if (categoryUpper.includes('GYM') || categoryUpper.includes('FITNESS') || categoryUpper.includes('SPORT')) 
-                return '673a9f8755ac0d45f4788351'; // GYM
+                return costMappings["GYM"];
             if (categoryUpper.includes('INTERNET') || categoryUpper.includes('WEB') || categoryUpper.includes('ONLINE')) 
-                return '673a9f8b55ac0d45f478838a'; // INTERNET
-            
-            // Office & Equipment
+                return costMappings["INTERNET"];
             if (categoryUpper.includes('CREDIT CABINET') || categoryUpper.includes('OFFICE CREDIT')) 
-                return '673a9f7c55ac0d45f47882df'; // CREDIT CABINET
-            if (categoryUpper.includes('LOGICIEL') || categoryUpper.includes('SOFTWARE') || categoryUpper.includes('CABINET')) 
-                return '673a9f9855ac0d45f4788435'; // LOGICIEL CABINET
-            if (categoryUpper.includes('LOYER') || categoryUpper.includes('RENT') || categoryUpper.includes('OFFICE RENT')) 
-                return '673a9f9c55ac0d45f478846e'; // LOYER CABINET
-            if (categoryUpper.includes('MATERIEL') || categoryUpper.includes('EQUIPMENT') || categoryUpper.includes('OFFICE EQUIPMENT')) 
-                return '673a9fa555ac0d45f47884e0'; // MATERIEL CABINET
-            
-            // Vehicles & Transport
+                return costMappings["CREDIT CABINET"];
+            if (categoryUpper.includes('LOGICIEL') || categoryUpper.includes('SOFTWARE')) 
+                return costMappings["LOGICIEL CABINET"];
+            if (categoryUpper.includes('LOYER') || categoryUpper.includes('RENT')) 
+                return costMappings["LOYER CABINET"];
+            if (categoryUpper.includes('MATERIEL') || categoryUpper.includes('EQUIPMENT')) 
+                return costMappings["MATERIEL CABINET"];
             if (categoryUpper.includes('MOTO') || categoryUpper.includes('MOTORCYCLE')) 
-                return '673a9f9055ac0d45f47883c3'; // LEASING MOTO
+                return costMappings["LEASING MOTO"];
             if (categoryUpper.includes('VOITURE') || categoryUpper.includes('CAR') || categoryUpper.includes('VEHICLE')) 
-                return '673a9f9455ac0d45f47883fc'; // LEASING VOITURE
-            
-            // Payroll & Benefits
+                return costMappings["LEASING VOITURE"];
             if (categoryUpper.includes('MASSE SALARIALE') || categoryUpper.includes('PAYROLL') || categoryUpper.includes('SALARY')) 
-                return '673a9fa155ac0d45f47884a7'; // MASSE SALARIALE
+                return costMappings["MASSE SALARIALE"];
+            if (categoryUpper.includes('MUTUELLE') && categoryUpper.includes('SALARIÉ')) 
+                return costMappings["MUTUELLE SALARIÉ"];
             if (categoryUpper.includes('MUTUELLE') && !categoryUpper.includes('SALARIÉ')) 
-                return '673a9faa55ac0d45f4788519'; // MUTUELLE
-            if (categoryUpper.includes('MUTUELLE SALARIÉ') || categoryUpper.includes('EMPLOYEE MUTUAL')) 
-                return '673a9faf55ac0d45f4788552'; // MUTUELLE SALARIÉ
+                return costMappings["MUTUELLE"];
             if (categoryUpper.includes('PREVOYANCE') || categoryUpper.includes('DISABILITY')) 
-                return '673a9fb655ac0d45f478858b'; // PREVOYANCE
+                return costMappings["PREVOYANCE"];
             if (categoryUpper.includes('URSSAF') || categoryUpper.includes('SOCIAL SECURITY')) 
-                return '673a9fbf55ac0d45f47885fd'; // URSSAF/CHARGES SOCIALES
-            
-            // Payment Processing
+                return costMappings["URSSAF/CHARGES SOCIALES"];
             if (categoryUpper.includes('TPE') || categoryUpper.includes('CARD TERMINAL') || categoryUpper.includes('TERMINAL')) 
-                return '673a9fba55ac0d45f47885c4'; // TPE BANQUE
+                return costMappings["TPE BANQUE"];
             
             // Default fallback
-            return '673a9f7055ac0d45f4788235'; // ASSURANCE as default
+            return costMappings["ASSURANCE"];
         };
 
         // Convert French date format to ISO date string
