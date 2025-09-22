@@ -350,7 +350,7 @@
                     transactions: transactions.map(tx => ({
                         date: convertToISODate(tx.date), // Convert to proper ISO format
                         description: tx.description || tx.nature, // Full transaction description
-                        cost: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
+                        cost: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s]/g, '').replace(',', '.')),
                         taxes: 0, // Always 0% as specified
                         typeOfTransaction: 'cost', // Valid: ["revenue", "cost"] - always cost for expenses
                         typeOfMovement: mapMovementType(tx.description || tx.nature), // Valid: ["card", "cash", "bank check", "transfer", "other"]
@@ -794,10 +794,24 @@
             });
         };
 
-        // Format amount to remove spaces (fix "2 000,00" to "2000,00")
+        // Format amount to proper format (fix "2 000,00" to "2,000.00")
         const formatAmount = (amount) => {
             if (!amount) return '';
-            return String(amount).replace(/\s+/g, ''); // Remove all spaces
+            
+            // Convert string amount to number
+            let numericAmount = String(amount)
+                .replace(/\s+/g, '') // Remove spaces
+                .replace(',', '.'); // Replace comma with dot for decimal
+            
+            // Parse as float and format with proper separators
+            const number = parseFloat(numericAmount);
+            if (isNaN(number)) return amount;
+            
+            // Format with thousands separators and 2 decimal places
+            return number.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         };
 
         // Get color for confidence level
