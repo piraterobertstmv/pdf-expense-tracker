@@ -173,12 +173,20 @@
             goGainToken = urlParams.get('token');
             goGainBackendUrl = urlParams.get('backend') || 'https://gogain-backend.onrender.com';
             
+            // Force GoGain backend URL if token is present
+            if (goGainToken && !urlParams.get('backend')) {
+                goGainBackendUrl = 'https://gogain-backend.onrender.com';
+                console.log('🔧 Forcing GoGain backend URL:', goGainBackendUrl);
+            }
+            
             console.log('🔍 GoGain Integration Initialization:', {
                 hasToken: !!goGainToken,
                 tokenLength: goGainToken ? goGainToken.length : 0,
                 tokenPreview: goGainToken ? goGainToken.substring(0, 20) + '...' : 'none',
                 backendUrl: goGainBackendUrl,
-                allParams: Object.fromEntries(urlParams)
+                allParams: Object.fromEntries(urlParams),
+                currentUrl: window.location.href,
+                searchParams: window.location.search
             });
             
             if (goGainToken) {
@@ -284,6 +292,13 @@
                 console.log('🔍 Request URL:', `${goGainBackendUrl}/api/import-pdf-transactions`);
                 console.log('🔍 Token preview:', goGainToken.substring(0, 20) + '...');
                 console.log('🔍 Sample transaction data:', payload.transactions[0]);
+                
+                // Warning if wrong URL detected
+                if (goGainBackendUrl.includes('pdf-expense-tracker-api')) {
+                    console.error('❌ WRONG URL! Using PDF extractor API instead of GoGain API');
+                    updateStatus('❌ Configuration error: Wrong backend URL detected');
+                    return false;
+                }
                 
                 const response = await fetch(`${goGainBackendUrl}/api/import-pdf-transactions`, {
                     method: 'POST',
