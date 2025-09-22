@@ -7,28 +7,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-// CORS configuration - Allow GoGain frontend and PDF extractor frontend
-const allowedOrigins = [
-    process.env.FRONTEND_URL,
-    'https://pdf-expense-tracker.vercel.app',
-    'https://gogain-frontend.vercel.app',
-    'http://localhost:3000',
-    'http://localhost:5173'
-];
-
+// CORS configuration - Allow all origins for now to fix CORS issues
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
-            return callback(null, true);
-        }
-        
-        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-        return callback(new Error(msg), false);
-    },
-    credentials: true
+    origin: true, // Allow all origins
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '10mb' })); // Increase limit for PDF text
 // Remove static file serving for production API-only backend
