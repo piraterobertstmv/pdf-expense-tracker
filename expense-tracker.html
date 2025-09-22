@@ -314,14 +314,30 @@
             const desc = description.toUpperCase();
             
             // Valid enum values: ["card", "cash", "bank check", "transfer", "other"]
-            if (desc.includes('VIR') || desc.includes('VIREMENT')) return 'transfer';
-            if (desc.includes('CARTE') || desc.includes('CB')) return 'card';
-            if (desc.includes('PRELEVEMENT') || desc.includes('PRELEV')) return 'transfer';
-            if (desc.includes('CHEQUE')) return 'bank check';
-            if (desc.includes('ESPECES') || desc.includes('CASH')) return 'cash';
-            if (desc.includes('REMISE')) return 'transfer';
             
-            return 'other';
+            // Card transactions
+            if (desc.includes('CARTE')) return 'card';
+            
+            // Bank transfers (wire transfers, instant transfers)
+            if (desc.includes('VIR INSTANTANE') || 
+                desc.includes('VIR INST') || 
+                desc.includes('VIREMENT') || 
+                desc.includes('VIR ')) return 'transfer';
+            
+            // Direct debits (European direct debits, regular debits)
+            if (desc.includes('PRELEVEMENT')) return 'transfer';
+            
+            // TPE transactions (card terminal)
+            if (desc.includes('TPE')) return 'card';
+            
+            // Bank checks
+            if (desc.includes('CHEQUE') || desc.includes('CHQ')) return 'bank check';
+            
+            // Cash transactions
+            if (desc.includes('ESPECES') || desc.includes('CASH')) return 'cash';
+            
+            // Default to transfer for most French bank transactions
+            return 'transfer';
         };
 
         // Send extracted transactions to GoGain
@@ -718,10 +734,33 @@
         
         // Helper function to determine movement type
         const determineMovementType = (description) => {
-            if (description.includes('PRELEVEMENT')) return 'direct_debit';
-            if (description.includes('VIR')) return 'transfer';
-            if (description.includes('CARTE')) return 'card';
-            return 'other';
+            if (!description) return 'other';
+            
+            const desc = description.toUpperCase();
+            
+            // Card transactions
+            if (desc.includes('CARTE')) return 'card';
+            
+            // Bank transfers (wire transfers, instant transfers)
+            if (desc.includes('VIR INSTANTANE') || 
+                desc.includes('VIR INST') || 
+                desc.includes('VIREMENT') || 
+                desc.includes('VIR ')) return 'bank transfer';
+            
+            // Direct debits (European direct debits, regular debits)
+            if (desc.includes('PRELEVEMENT')) return 'bank transfer';
+            
+            // TPE transactions (card terminal)
+            if (desc.includes('TPE')) return 'card';
+            
+            // Bank checks
+            if (desc.includes('CHEQUE') || desc.includes('CHQ')) return 'bank check';
+            
+            // Cash transactions
+            if (desc.includes('ESPECES') || desc.includes('CASH')) return 'cash';
+            
+            // Default to bank transfer for most French bank transactions
+            return 'bank transfer';
         };
 
         // Categorization handler
