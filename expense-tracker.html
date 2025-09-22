@@ -307,18 +307,19 @@
             return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
         };
 
-        // Map transaction description to movement type for GoGain
+        // Map transaction description to movement type for GoGain (using valid enum values)
         const mapMovementType = (description) => {
             if (!description) return 'other';
             
             const desc = description.toUpperCase();
             
-            if (desc.includes('VIR') || desc.includes('VIREMENT')) return 'bank transfer';
-            if (desc.includes('CARTE') || desc.includes('CB')) return 'card payment';
-            if (desc.includes('PRELEVEMENT') || desc.includes('PRELEV')) return 'direct debit';
-            if (desc.includes('CHEQUE')) return 'check';
+            // Valid enum values: ["card", "cash", "bank check", "transfer", "other"]
+            if (desc.includes('VIR') || desc.includes('VIREMENT')) return 'transfer';
+            if (desc.includes('CARTE') || desc.includes('CB')) return 'card';
+            if (desc.includes('PRELEVEMENT') || desc.includes('PRELEV')) return 'transfer';
+            if (desc.includes('CHEQUE')) return 'bank check';
             if (desc.includes('ESPECES') || desc.includes('CASH')) return 'cash';
-            if (desc.includes('REMISE')) return 'deposit';
+            if (desc.includes('REMISE')) return 'transfer';
             
             return 'other';
         };
@@ -352,10 +353,10 @@
                         description: tx.description || tx.nature, // Full transaction description
                         cost: parseFloat((tx.amount || tx.debit || tx.amountWithTaxes || '0').replace(/[€\s,]/g, '').replace(',', '.')),
                         taxes: 0, // Always 0% as specified
-                        typeOfTransaction: 'cost', // Always cost for PDF expenses
-                        typeOfMovement: mapMovementType(tx.description || tx.nature), // Map based on description
-                        frequency: 'ordinary', // Default frequency for PDF imports
-                        typeOfClient: 'client', // Default client type
+                        typeOfTransaction: 'cost', // Valid: ["revenue", "cost"] - always cost for expenses
+                        typeOfMovement: mapMovementType(tx.description || tx.nature), // Valid: ["card", "cash", "bank check", "transfer", "other"]
+                        frequency: 'ordinary', // Valid: ["ordinary", "exceptional"] - default to ordinary
+                        typeOfClient: 'supplier', // Valid: ["client", "supplier"] - expenses are from suppliers
                         clientName: tx.clientName || tx.client, // For auto-client creation
                         service: mapCategoryToServiceId(tx.category || tx.service), // Map to GoGain service ID
                         serviceName: tx.category || tx.service, // Keep original for debugging
@@ -945,9 +946,9 @@
                     client: 'TEST CLIENT',
                     amountWithTaxes: '100,00',
                     service: 'TEST CATEGORY',
-                    typeOfMovement: 'card payment',
-                    frequency: 'ordinary',
-                    typeOfClient: 'client',
+                    typeOfMovement: 'card', // Valid enum value
+                    frequency: 'ordinary', // Valid enum value
+                    typeOfClient: 'supplier', // Valid enum value - expenses are from suppliers
                     confidence: 'high'
                 }];
             }
