@@ -595,7 +595,7 @@
                         index: index + 1,
                         date: tx.date,
                         center: '',
-                        client: tx.client || 'UNKNOWN', // Use AI-extracted client name
+                        client: tx.client || extractFallbackClient(tx.description), // Use AI-extracted client name with fallback
                         amountWithTaxes: tx.amount,
                         amountWithoutTaxes: '',
                         worker: '',
@@ -629,6 +629,58 @@
             }
         };
         
+        // Enhanced fallback client extraction
+        const extractFallbackClient = (description) => {
+            if (!description) return 'UNKNOWN';
+            
+            // Remove dates and common prefixes
+            let cleanDesc = description.replace(/^\d{2}\/\d{2}\/\d{4}\s*\d{2}\/\d{2}\/\d{4}\s*/, '');
+            
+            // Specific patterns for better extraction
+            const patterns = [
+                // Card transactions
+                /CARTE\s+X\d+\s+\d{2}\/\d{2}\s+(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                // Wire transfers
+                /VIR\s+INSTANTANE\s+EMIS\s+NET\s+POUR:\s*(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                // European direct debits with numbers
+                /PRELEVEMENT\s+EUROPEEN\s+\d+\s+(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                // Regular direct debits
+                /PRELEVEMENT\s+EUROPEEN\s+DE:\s*(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                /PRELEVEMENT\s+(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                // TPE transactions
+                /TPE\s+(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                // Fees and charges
+                /FRAIS\s+(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                /COTISATION\s+(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                /COMMISSION\s+(.+?)(?:\s+\d+[,\.]\d+)?$/i,
+                // General pattern - extract main content
+                /^([A-Z][A-Z\s\-\.]+?)(?:\s+\d+[,\.]\d+)?$/i
+            ];
+            
+            for (const pattern of patterns) {
+                const match = cleanDesc.match(pattern);
+                if (match && match[1]) {
+                    let client = match[1].trim();
+                    
+                    // Clean up common artifacts
+                    client = client.replace(/\s+/g, ' ');
+                    client = client.replace(/^\d+\s+/, ''); // Remove leading numbers
+                    client = client.replace(/\s+\d+$/, ''); // Remove trailing numbers
+                    
+                    // Handle specific cases
+                    if (client.includes('FRAIS') || client.includes('COTISATION') || client.includes('COMMISSION')) {
+                        return 'BANK FEES';
+                    }
+                    
+                    if (client.length > 3) {
+                        return client;
+                    }
+                }
+            }
+            
+            return 'UNKNOWN';
+        };
+
         // Helper function to extract client from description
         const extractClientFromDescription = (description) => {
             if (description.includes('POUR:')) {
