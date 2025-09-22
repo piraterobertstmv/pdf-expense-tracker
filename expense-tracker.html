@@ -97,7 +97,7 @@
                             <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-16">Index</th>
                             <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">Date</th>
                             <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">Center</th>
-                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-32">Service</th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-32">Client</th>
                             <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-24">
                                 Amount<br>with<br>taxes
                             </th>
@@ -116,11 +116,12 @@
                             <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-20">
                                 Type of<br>client
                             </th>
+                            <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-32">Service</th>
                         </tr>
                     </thead>
                     <tbody id="expenseTableBody">
                         <tr>
-                            <td colspan="13" class="border border-gray-300 px-3 py-8 text-center text-gray-500">
+                            <td colspan="14" class="border border-gray-300 px-3 py-8 text-center text-gray-500">
                                 No expenses extracted yet. Upload a PDF to begin.
                             </td>
                         </tr>
@@ -762,11 +763,7 @@
                                class="w-full border-0 bg-transparent text-sm focus:ring-1 focus:ring-blue-500 rounded px-1" 
                                placeholder="Enter center">
                     </td>
-                    <td class="border border-gray-300 px-3 py-2 text-sm">
-                        <span class="px-2 py-1 ${getConfidenceColor(expense.confidence)} rounded-full text-xs">
-                            ${expense.service}
-                        </span>
-                    </td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">${expense.client}</td>
                     <td class="border border-gray-300 px-3 py-2 text-sm font-medium">${formatAmount(expense.amountWithTaxes)}</td>
                     <td class="border border-gray-300 px-3 py-2 text-sm">
                         <input type="text" value="${formatAmount(expense.amountWithoutTaxes)}" 
@@ -789,6 +786,11 @@
                     <td class="border border-gray-300 px-3 py-2 text-sm">${expense.typeOfMovement}</td>
                     <td class="border border-gray-300 px-3 py-2 text-sm">${expense.frequency}</td>
                     <td class="border border-gray-300 px-3 py-2 text-sm">${expense.typeOfClient}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-sm">
+                        <span class="px-2 py-1 ${getConfidenceColor(expense.confidence)} rounded-full text-xs">
+                            ${expense.service}
+                        </span>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
