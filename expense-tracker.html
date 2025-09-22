@@ -340,6 +340,7 @@
                         service: mapCategoryToServiceId(tx.category || tx.service), // Map to GoGain service ID
                         serviceName: tx.category || tx.service, // Keep original for debugging
                         confidence: tx.confidence || 'medium' // AI confidence level
+                        // Note: center field will be assigned by GoGain backend based on user permissions
                     }))
                 };
                 
