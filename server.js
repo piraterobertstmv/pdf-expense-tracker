@@ -285,42 +285,44 @@ EXTRACTION PROCESS:
 CLIENT EXTRACTION RULES:
 Extract clear client names from transaction descriptions. NEVER use "Unknown Client".
 
-CLIENT IDENTIFICATION PATTERNS:
-✅ "VIR INSTANTANE EMIS NET POUR: [NAME]" → Client = [NAME]
-✅ "PRELEVEMENT EUROPEEN DE: [COMPANY]" → Client = [COMPANY] 
-✅ "CARTE X2148 DD/MM [STORE NAME]" → Client = [STORE NAME]
-✅ "PRELEVEMENT [SERVICE PROVIDER]" → Client = [SERVICE PROVIDER]
-✅ "PRELEVEMENT EUROPEEN [NUMBER] [COMPANY]" → Client = [COMPANY]
-✅ "[COMPANY NAME] REF: [NUMBER]" → Client = [COMPANY NAME]
-✅ "TPE [MERCHANT NAME]" → Client = [MERCHANT NAME]
-✅ "FRAIS [SERVICE TYPE]" → Client = "BANK FEES"
-✅ "COTISATION [SERVICE]" → Client = [SERVICE]
-✅ "COMMISSION [SERVICE]" → Client = [SERVICE]
-✅ "ABONNEMENT [SERVICE]" → Client = [SERVICE]
+CLIENT IDENTIFICATION PATTERNS - EXACT RULES:
 
-ADVANCED EXTRACTION RULES:
-- Extract company names even with reference numbers
-- Remove technical codes/numbers from client names
-- Use meaningful business names, not transaction codes
-- For fees/charges, use descriptive client names
+1. ✅ Text after "POUR:" → Client = [TEXT AFTER POUR:]
+   Example: "VIR INSTANTANE EMIS NET POUR: Ana STEFANOVIC" → Client: "Ana STEFANOVIC"
 
-COMMON CLIENT PATTERNS:
-- Business names: "CARREFOUR CITY", "MAGASINS NICOL", "SUMUP"
-- Service providers: "ORANGE BUSINESS SERVICES", "SOCIETE GENERALE"
-- People names: "M. JORGE GOENAGA PEREZ", "Ana STEFANOVIC"
-- Government: "URSSAF", "DGFIP", "IMPOTS"
-- Banks: "SOCIETE GENERALE", "BNP PARIBAS"
-- Fees: "BANK FEES", "CARD FEES", "ACCOUNT FEES"
+2. ✅ Text after "DE:" → Client = [TEXT AFTER DE:]
+   Example: "PRELEVEMENT EUROPEEN DE: ORANGE" → Client: "ORANGE"
+
+3. ✅ Text after "POUR CPTE DE:" → Client = [TEXT AFTER POUR CPTE DE:]
+   Example: "VIREMENT POUR CPTE DE: COMPANY NAME" → Client: "COMPANY NAME"
+
+4. ✅ Text after "CARTE XXXX XX/XX" → Client = [STORE/MERCHANT NAME]
+   Example: "CARTE X2148 01/02 SUMUP" → Client: "SUMUP"
+
+5. ✅ "JAZZPRO I JAZZPRO" → Client = "JAZZPRO"
+
+6. ✅ Special case: "ABONNEMENT MATERIEL" → Client = "LOYER TPE"
+
+7. ✅ For complex descriptions (like interest/fees), extract the most logical client:
+   Example: "INT DEBITEURS ET CION DECOUVERT" → Client: "DEBITEURS ET CION DECOUVERT"
+
+EXTRACTION PRIORITY ORDER:
+1. Look for "POUR:" first
+2. Look for "DE:" second  
+3. Look for "POUR CPTE DE:" third
+4. Look for "CARTE" pattern fourth
+5. Check for "JAZZPRO I JAZZPRO"
+6. Check for "ABONNEMENT MATERIEL"
+7. For other cases, extract the main business/service name from the description
 
 CLIENT EXTRACTION EXAMPLES:
+"VIR INSTANTANE EMIS NET POUR: M. JORGE GOENAGA PEREZ" → Client: "M. JORGE GOENAGA PEREZ"
+"PRELEVEMENT EUROPEEN DE: URSSAF" → Client: "URSSAF"
 "CARTE X2148 01/02 SUMUP" → Client: "SUMUP"
-"VIR INSTANTANE EMIS NET POUR: Ana STEFANOVIC" → Client: "Ana STEFANOVIC"  
-"PRELEVEMENT EUROPEEN ORANGE BUSINESS SERVICES" → Client: "ORANGE BUSINESS SERVICES"
-"PRELEVEMENT EUROPEEN 325960010 URSSAF" → Client: "URSSAF"
-"TPE BANQUE SOCIETE GENERALE" → Client: "SOCIETE GENERALE"
-"FRAIS TENUE DE COMPTE" → Client: "BANK FEES"
-"COTISATION CARTE VISA" → Client: "VISA FEES"
-"COMMISSION INTERVENTION" → Client: "BANK FEES"
+"JAZZPRO I JAZZPRO ABONNEMENT" → Client: "JAZZPRO"
+"ABONNEMENT MATERIEL TPE" → Client: "LOYER TPE"
+"INT DEBITEURS ET CION DECOUVERT AU 31/12/24" → Client: "DEBITEURS ET CION DECOUVERT"
+"FRAIS TENUE DE COMPTE" → Client: "FRAIS TENUE DE COMPTE"
 
 If client name is unclear, use the main business/service mentioned in description.
 
