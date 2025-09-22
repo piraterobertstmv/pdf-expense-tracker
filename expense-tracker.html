@@ -217,6 +217,60 @@
             }
         };
 
+        // GoGain service mapping - map categories to GoGain service IDs
+        const mapCategoryToServiceId = (category) => {
+            if (!category) return '673a9f7055ac0d45f4788235'; // Default to ASSURANCE
+            
+            const categoryUpper = category.toUpperCase();
+            
+            // Business expenses
+            if (categoryUpper.includes('ASSURANCE') || categoryUpper.includes('INSURANCE')) 
+                return '673a9f7055ac0d45f4788235'; // ASSURANCE
+            if (categoryUpper.includes('CHARGES SOCIALES') || categoryUpper.includes('SOCIAL')) 
+                return '673a9f7755ac0d45f47882a6'; // CHARGES SOCIALES
+            if (categoryUpper.includes('FRAIS BANQUE') || categoryUpper.includes('BANK') || categoryUpper.includes('BANQUE')) 
+                return '673a9f8255ac0d45f4788318'; // FRAIS BANQUE
+            if (categoryUpper.includes('GYM') || categoryUpper.includes('FITNESS') || categoryUpper.includes('SPORT')) 
+                return '673a9f8755ac0d45f4788351'; // GYM
+            if (categoryUpper.includes('INTERNET') || categoryUpper.includes('WEB') || categoryUpper.includes('ONLINE')) 
+                return '673a9f8b55ac0d45f478838a'; // INTERNET
+            
+            // Office & Equipment
+            if (categoryUpper.includes('CREDIT CABINET') || categoryUpper.includes('OFFICE CREDIT')) 
+                return '673a9f7c55ac0d45f47882df'; // CREDIT CABINET
+            if (categoryUpper.includes('LOGICIEL') || categoryUpper.includes('SOFTWARE') || categoryUpper.includes('CABINET')) 
+                return '673a9f9855ac0d45f4788435'; // LOGICIEL CABINET
+            if (categoryUpper.includes('LOYER') || categoryUpper.includes('RENT') || categoryUpper.includes('OFFICE RENT')) 
+                return '673a9f9c55ac0d45f478846e'; // LOYER CABINET
+            if (categoryUpper.includes('MATERIEL') || categoryUpper.includes('EQUIPMENT') || categoryUpper.includes('OFFICE EQUIPMENT')) 
+                return '673a9fa555ac0d45f47884e0'; // MATERIEL CABINET
+            
+            // Vehicles & Transport
+            if (categoryUpper.includes('MOTO') || categoryUpper.includes('MOTORCYCLE')) 
+                return '673a9f9055ac0d45f47883c3'; // LEASING MOTO
+            if (categoryUpper.includes('VOITURE') || categoryUpper.includes('CAR') || categoryUpper.includes('VEHICLE')) 
+                return '673a9f9455ac0d45f47883fc'; // LEASING VOITURE
+            
+            // Payroll & Benefits
+            if (categoryUpper.includes('MASSE SALARIALE') || categoryUpper.includes('PAYROLL') || categoryUpper.includes('SALARY')) 
+                return '673a9fa155ac0d45f47884a7'; // MASSE SALARIALE
+            if (categoryUpper.includes('MUTUELLE') && !categoryUpper.includes('SALARIÉ')) 
+                return '673a9faa55ac0d45f4788519'; // MUTUELLE
+            if (categoryUpper.includes('MUTUELLE SALARIÉ') || categoryUpper.includes('EMPLOYEE MUTUAL')) 
+                return '673a9faf55ac0d45f4788552'; // MUTUELLE SALARIÉ
+            if (categoryUpper.includes('PREVOYANCE') || categoryUpper.includes('DISABILITY')) 
+                return '673a9fb655ac0d45f478858b'; // PREVOYANCE
+            if (categoryUpper.includes('URSSAF') || categoryUpper.includes('SOCIAL SECURITY')) 
+                return '673a9fbf55ac0d45f47885fd'; // URSSAF/CHARGES SOCIALES
+            
+            // Payment Processing
+            if (categoryUpper.includes('TPE') || categoryUpper.includes('CARD TERMINAL') || categoryUpper.includes('TERMINAL')) 
+                return '673a9fba55ac0d45f47885c4'; // TPE BANQUE
+            
+            // Default fallback
+            return '673a9f7055ac0d45f4788235'; // ASSURANCE as default
+        };
+
         // Convert French date format to ISO date string
         const convertToISODate = (dateStr) => {
             if (!dateStr) return new Date().toISOString();
@@ -283,7 +337,8 @@
                         frequency: 'ordinary', // Default frequency for PDF imports
                         typeOfClient: 'client', // Default client type
                         clientName: tx.clientName || tx.client, // For auto-client creation
-                        serviceName: tx.category || tx.service, // For service mapping
+                        service: mapCategoryToServiceId(tx.category || tx.service), // Map to GoGain service ID
+                        serviceName: tx.category || tx.service, // Keep original for debugging
                         confidence: tx.confidence || 'medium' // AI confidence level
                     }))
                 };
@@ -292,6 +347,10 @@
                 console.log('🔍 Request URL:', `${goGainBackendUrl}/api/import-pdf-transactions`);
                 console.log('🔍 Token preview:', goGainToken.substring(0, 20) + '...');
                 console.log('🔍 Sample transaction data:', payload.transactions[0]);
+                console.log('🔍 Service mappings:', payload.transactions.map(tx => ({
+                    category: tx.serviceName,
+                    serviceId: tx.service
+                })));
                 
                 // Warning if wrong URL detected
                 if (goGainBackendUrl.includes('pdf-expense-tracker-api')) {
