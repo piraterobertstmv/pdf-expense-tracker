@@ -51,6 +51,18 @@
                     <strong>🔑 API Key:</strong> Stored securely in backend .env file - no need to enter manually!
                 </p>
             </div>
+
+            <!-- Center Selection -->
+            <div class="mb-4">
+                <label for="centerSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                    🏢 Select Center for Transactions:
+                </label>
+                <select id="centerSelect" class="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Loading centers...</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">All extracted transactions will be assigned to this center</p>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                 <button id="extractBtn" onclick="handleExtractPDF()" 
                         class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg disabled:bg-gray-400" 
@@ -376,8 +388,9 @@
                         clientName: tx.clientName || tx.client, // For auto-client creation
                         service: mapCategoryToServiceId(tx.category || tx.service), // Map to GoGain service ID
                         serviceName: tx.category || tx.service, // Keep original for debugging
-                        confidence: tx.confidence || 'medium' // AI confidence level
-                        // Note: center field will be assigned by GoGain backend based on user permissions
+                        confidence: tx.confidence || 'medium', // AI confidence level
+                        center: tx.center, // Selected center from dropdown
+                        centerName: getSelectedCenterName() // Center name for display
                     }))
                 };
                 
@@ -500,6 +513,13 @@
                 updateStatus('✗ Please select a PDF file first');
                 return;
             }
+
+            // Check if center is selected
+            const selectedCenter = getSelectedCenter();
+            if (!selectedCenter) {
+                updateStatus('✗ Please select a center from the dropdown first');
+                return;
+            }
             
             showProcessingStatus(true);
             
@@ -559,6 +579,13 @@
                 updateStatus('✗ Please select a PDF file first');
                 return;
             }
+
+            // Check if center is selected
+            const selectedCenter = getSelectedCenter();
+            if (!selectedCenter) {
+                updateStatus('✗ Please select a center from the dropdown first');
+                return;
+            }
             
             showProcessingStatus(true);
             
@@ -615,7 +642,7 @@
                     processedExpenses = categorizedTransactions.map((tx, index) => ({
                         index: index + 1,
                         date: tx.date,
-                        center: '',
+                        center: getSelectedCenter(),
                         client: tx.client || extractFallbackClient(tx.description), // Use AI-extracted client name with fallback
                         amountWithTaxes: tx.amount,
                         amountWithoutTaxes: '',
@@ -873,9 +900,9 @@
                     <td class="border border-gray-300 px-3 py-2 text-sm">${expense.index}</td>
                     <td class="border border-gray-300 px-3 py-2 text-sm">${expense.date}</td>
                     <td class="border border-gray-300 px-3 py-2 text-sm">
-                        <input type="text" value="${expense.center}" 
+                        <input type="text" value="${getSelectedCenterName() || 'Select center above'}" 
                                class="w-full border-0 bg-transparent text-sm focus:ring-1 focus:ring-blue-500 rounded px-1" 
-                               placeholder="Enter center">
+                               placeholder="Select center above" readonly>
                     </td>
                     <td class="border border-gray-300 px-3 py-2 text-sm">${expense.client}</td>
                     <td class="border border-gray-300 px-3 py-2 text-sm font-medium">${formatAmount(expense.amountWithTaxes)}</td>
@@ -1093,9 +1120,66 @@
     </script>
     
     <script>
+        // Load centers from GoGain API
+        const loadCenters = async () => {
+            const centerSelect = document.getElementById('centerSelect');
+            
+            if (!goGainToken || !goGainBackendUrl) {
+                centerSelect.innerHTML = '<option value="">No GoGain connection - centers not available</option>';
+                return;
+            }
+
+            try {
+                console.log('🏢 Loading centers from GoGain...');
+                const response = await fetch(`${goGainBackendUrl}/api/centers`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${goGainToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Centers API error: ${response.status}`);
+                }
+
+                const centers = await response.json();
+                console.log('✅ Centers loaded:', centers);
+
+                // Populate dropdown
+                centerSelect.innerHTML = '<option value="">Select a center...</option>';
+                centers.forEach(center => {
+                    const option = document.createElement('option');
+                    option.value = center._id;
+                    option.textContent = center.name || center.centerName || center._id;
+                    centerSelect.appendChild(option);
+                });
+
+                console.log('✅ Center dropdown populated');
+
+            } catch (error) {
+                console.error('❌ Failed to load centers:', error);
+                centerSelect.innerHTML = '<option value="">Error loading centers</option>';
+            }
+        };
+
+        // Get selected center ID
+        const getSelectedCenter = () => {
+            const centerSelect = document.getElementById('centerSelect');
+            return centerSelect.value;
+        };
+
+        // Get selected center name
+        const getSelectedCenterName = () => {
+            const centerSelect = document.getElementById('centerSelect');
+            const selectedOption = centerSelect.options[centerSelect.selectedIndex];
+            return selectedOption ? selectedOption.textContent : '';
+        };
+
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeGoGainIntegration();
+            loadCenters(); // Load centers after initialization
         });
     </script>
 </body>
