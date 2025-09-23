@@ -667,7 +667,7 @@
                         // Log each transaction in detail
                         console.log(`📋 TRANSACTION ${index + 1} EXTRACTED:`, {
                             '🗓️ Date': processedTx.date,
-                            '🏢 Center': `${getSelectedCenterName()} (${processedTx.center})`,
+                            '🏢 Center': processedTx.center,
                             '👤 Client': processedTx.client,
                             '💰 Amount': processedTx.amountWithTaxes,
                             '🏷️ Service/Category': processedTx.service,
@@ -683,7 +683,7 @@
                     // Summary log
                     console.log('📊 EXTRACTION SUMMARY:', {
                         'Total Transactions': processedExpenses.length,
-                        'Selected Center': `${getSelectedCenterName()} (${getSelectedCenter()})`,
+                        'Selected Center': getSelectedCenterName(),
                         'Date Range': processedExpenses.length > 0 ? 
                             `${processedExpenses[0].date} to ${processedExpenses[processedExpenses.length - 1].date}` : 'N/A',
                         'Total Amount': processedExpenses.reduce((sum, tx) => {
@@ -862,7 +862,7 @@
                 // Log each transaction in detail (Regex extraction)
                 console.log(`📋 TRANSACTION ${index + 1} CATEGORIZED (REGEX):`, {
                     '🗓️ Date': processedTx.date,
-                    '🏢 Center': `${getSelectedCenterName()} (${processedTx.center})`,
+                    '🏢 Center': processedTx.center,
                     '👤 Client': processedTx.client,
                     '💰 Amount': processedTx.amountWithTaxes,
                     '🏷️ Service/Category': processedTx.service,
@@ -879,7 +879,7 @@
             // Summary log for regex extraction
             console.log('📊 CATEGORIZATION SUMMARY (REGEX):', {
                 'Total Transactions': processedExpenses.length,
-                'Selected Center': `${getSelectedCenterName()} (${getSelectedCenter()})`,
+                'Selected Center': getSelectedCenterName(),
                 'Date Range': processedExpenses.length > 0 ? 
                     `${processedExpenses[0].date} to ${processedExpenses[processedExpenses.length - 1].date}` : 'N/A',
                 'Total Amount': processedExpenses.reduce((sum, tx) => {
