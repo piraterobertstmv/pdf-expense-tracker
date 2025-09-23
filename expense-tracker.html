@@ -639,22 +639,54 @@
                     }
                     
                     // Create processed expenses
-                    processedExpenses = categorizedTransactions.map((tx, index) => ({
-                        index: index + 1,
-                        date: tx.date,
-                        center: getSelectedCenter(),
-                        client: tx.client || extractFallbackClient(tx.description), // Use AI-extracted client name with fallback
-                        amountWithTaxes: tx.amount,
-                        amountWithoutTaxes: '',
-                        worker: '',
-                        taxes: '',
-                        typeOfTransaction: 'cost',
-                        typeOfMovement: determineMovementType(tx.description),
-                        frequency: 'ordinary',
-                        typeOfClient: 'client',
-                        service: tx.category || 'AUTRES',
-                        confidence: tx.confidence || 'medium'
-                    }));
+                    processedExpenses = categorizedTransactions.map((tx, index) => {
+                        const processedTx = {
+                            index: index + 1,
+                            date: tx.date,
+                            center: getSelectedCenter(),
+                            client: tx.client || extractFallbackClient(tx.description), // Use AI-extracted client name with fallback
+                            amountWithTaxes: tx.amount,
+                            amountWithoutTaxes: '',
+                            worker: '',
+                            taxes: '',
+                            typeOfTransaction: 'cost',
+                            typeOfMovement: determineMovementType(tx.description),
+                            frequency: 'ordinary',
+                            typeOfClient: 'client',
+                            service: tx.category || 'AUTRES',
+                            confidence: tx.confidence || 'medium'
+                        };
+
+                        // Log each transaction in detail
+                        console.log(`📋 TRANSACTION ${index + 1} EXTRACTED:`, {
+                            '🗓️ Date': processedTx.date,
+                            '🏢 Center': `${getSelectedCenterName()} (${processedTx.center})`,
+                            '👤 Client': processedTx.client,
+                            '💰 Amount': processedTx.amountWithTaxes,
+                            '🏷️ Service/Category': processedTx.service,
+                            '💳 Movement Type': processedTx.typeOfMovement,
+                            '📝 Original Description': tx.description,
+                            '🎯 AI Confidence': processedTx.confidence,
+                            '📊 Raw Transaction Data': tx
+                        });
+
+                        return processedTx;
+                    });
+
+                    // Summary log
+                    console.log('📊 EXTRACTION SUMMARY:', {
+                        'Total Transactions': processedExpenses.length,
+                        'Selected Center': `${getSelectedCenterName()} (${getSelectedCenter()})`,
+                        'Date Range': processedExpenses.length > 0 ? 
+                            `${processedExpenses[0].date} to ${processedExpenses[processedExpenses.length - 1].date}` : 'N/A',
+                        'Total Amount': processedExpenses.reduce((sum, tx) => {
+                            const amount = parseFloat(tx.amountWithTaxes.replace(/[€\s]/g, '').replace(',', '.')) || 0;
+                            return sum + amount;
+                        }, 0).toFixed(2) + '€',
+                        'Services Used': [...new Set(processedExpenses.map(tx => tx.service))],
+                        'Movement Types': [...new Set(processedExpenses.map(tx => tx.typeOfMovement))],
+                        'Clients': [...new Set(processedExpenses.map(tx => tx.client))]
+                    });
                     
                     populateTable();
                     document.getElementById('exportBtn').disabled = false;
@@ -803,10 +835,10 @@
                 const category = categorizeTransaction(transaction.nature);
                 const amount = parseFloat(transaction.debit);
                 
-                return {
+                const processedTx = {
                     index: index + 1,
                     date: transaction.date,
-                    center: '', // Manual entry
+                    center: getSelectedCenter(),
                     client: extractClient(transaction.nature),
                     amountWithTaxes: amount.toFixed(2) + '€',
                     amountWithoutTaxes: '', // Manual entry
@@ -815,10 +847,41 @@
                     typeOfTransaction: 'cost',
                     typeOfMovement: determineMovementType(transaction.nature),
                     frequency: determineFrequency(transaction.nature),
-                    typeOfClient: 'service',
+                    typeOfClient: 'client',
                     service: category.category,
                     confidence: category.confidence
                 };
+
+                // Log each transaction in detail (Regex extraction)
+                console.log(`📋 TRANSACTION ${index + 1} CATEGORIZED (REGEX):`, {
+                    '🗓️ Date': processedTx.date,
+                    '🏢 Center': `${getSelectedCenterName()} (${processedTx.center})`,
+                    '👤 Client': processedTx.client,
+                    '💰 Amount': processedTx.amountWithTaxes,
+                    '🏷️ Service/Category': processedTx.service,
+                    '💳 Movement Type': processedTx.typeOfMovement,
+                    '🔄 Frequency': processedTx.frequency,
+                    '📝 Original Description': transaction.nature,
+                    '🎯 Confidence': processedTx.confidence,
+                    '📊 Raw Transaction Data': transaction
+                });
+
+                return processedTx;
+            });
+
+            // Summary log for regex extraction
+            console.log('📊 CATEGORIZATION SUMMARY (REGEX):', {
+                'Total Transactions': processedExpenses.length,
+                'Selected Center': `${getSelectedCenterName()} (${getSelectedCenter()})`,
+                'Date Range': processedExpenses.length > 0 ? 
+                    `${processedExpenses[0].date} to ${processedExpenses[processedExpenses.length - 1].date}` : 'N/A',
+                'Total Amount': processedExpenses.reduce((sum, tx) => {
+                    const amount = parseFloat(tx.amountWithTaxes.replace(/[€\s]/g, '').replace(',', '.')) || 0;
+                    return sum + amount;
+                }, 0).toFixed(2) + '€',
+                'Services Used': [...new Set(processedExpenses.map(tx => tx.service))],
+                'Movement Types': [...new Set(processedExpenses.map(tx => tx.typeOfMovement))],
+                'Clients': [...new Set(processedExpenses.map(tx => tx.client))]
             });
 
             populateTable();
