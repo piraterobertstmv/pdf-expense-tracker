@@ -1120,17 +1120,33 @@
     </script>
     
     <script>
-        // Load centers from GoGain API
+        // Predefined centers as fallback
+        const predefinedCenters = [
+            { _id: '66eb4e85615c83d533d03876', name: 'BOSQUET', description: 'Default/Main center' },
+            { _id: '66eb4e91615c83d533d03878', name: 'CASA PADEL 1', description: 'Padel center 1' },
+            { _id: '66eb4e9b615c83d533d0387a', name: 'CASA PADEL 2', description: 'Padel center 2' },
+            { _id: '66eb4ea4615c83d533d0387c', name: 'CASA PADEL 3', description: 'Padel center 3' },
+            { _id: '66eb4eae615c83d533d0387e', name: 'CORPORATE', description: 'Corporate center' },
+            { _id: '67447fc9b56b5793c0cda791', name: 'APP', description: 'App/Digital services' },
+            { _id: '66eb4eb8615c83d533d03880', name: 'PSG', description: 'PSG partnership' },
+            { _id: '66eb4f1b615c83d533d03894', name: 'DIGITAL (GAIN ONE)', description: 'Digital services' }
+        ];
+
+        // Load centers from GoGain API with fallback
         const loadCenters = async () => {
             const centerSelect = document.getElementById('centerSelect');
             
             if (!goGainToken || !goGainBackendUrl) {
-                centerSelect.innerHTML = '<option value="">No GoGain connection - centers not available</option>';
+                console.log('🏢 No GoGain connection, using predefined centers');
+                populateCenterDropdown(predefinedCenters);
                 return;
             }
 
             try {
-                console.log('🏢 Loading centers from GoGain...');
+                console.log('🏢 Loading centers from GoGain API...');
+                console.log('🔗 URL:', `${goGainBackendUrl}/api/centers`);
+                console.log('🔑 Token:', goGainToken ? goGainToken.substring(0, 20) + '...' : 'No token');
+                
                 const response = await fetch(`${goGainBackendUrl}/api/centers`, {
                     method: 'GET',
                     headers: {
@@ -1139,28 +1155,48 @@
                     }
                 });
 
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
                 if (!response.ok) {
-                    throw new Error(`Centers API error: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('❌ API Error Response:', errorText);
+                    throw new Error(`Centers API error: ${response.status} - ${errorText}`);
                 }
 
                 const centers = await response.json();
-                console.log('✅ Centers loaded:', centers);
+                console.log('✅ Centers loaded from API:', centers);
 
-                // Populate dropdown
-                centerSelect.innerHTML = '<option value="">Select a center...</option>';
-                centers.forEach(center => {
-                    const option = document.createElement('option');
-                    option.value = center._id;
-                    option.textContent = center.name || center.centerName || center._id;
-                    centerSelect.appendChild(option);
-                });
-
-                console.log('✅ Center dropdown populated');
+                if (centers && centers.length > 0) {
+                    populateCenterDropdown(centers);
+                } else {
+                    console.log('⚠️ No centers returned from API, using predefined centers');
+                    populateCenterDropdown(predefinedCenters);
+                }
 
             } catch (error) {
-                console.error('❌ Failed to load centers:', error);
-                centerSelect.innerHTML = '<option value="">Error loading centers</option>';
+                console.error('❌ Failed to load centers from API:', error);
+                console.log('🔄 Falling back to predefined centers');
+                populateCenterDropdown(predefinedCenters);
             }
+        };
+
+        // Populate center dropdown with centers array
+        const populateCenterDropdown = (centers) => {
+            const centerSelect = document.getElementById('centerSelect');
+            
+            centerSelect.innerHTML = '<option value="">Select a center...</option>';
+            centers.forEach(center => {
+                const option = document.createElement('option');
+                option.value = center._id;
+                option.textContent = center.name || center.centerName || center._id;
+                if (center.description) {
+                    option.title = center.description; // Tooltip with description
+                }
+                centerSelect.appendChild(option);
+            });
+
+            console.log('✅ Center dropdown populated with', centers.length, 'centers');
         };
 
         // Get selected center ID
