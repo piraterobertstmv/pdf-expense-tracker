@@ -389,7 +389,7 @@
                         service: mapCategoryToServiceId(tx.category || tx.service), // Map to GoGain service ID
                         serviceName: tx.category || tx.service, // Keep original for debugging
                         confidence: tx.confidence || 'medium', // AI confidence level
-                        center: tx.center, // Selected center ID from dropdown
+                        center: getSelectedCenterName(), // Send center NAME not ID
                         centerName: getSelectedCenterName() // Center name for display
                     }))
                 };
@@ -402,7 +402,8 @@
                     selectedCenterId: getSelectedCenter(),
                     selectedCenterName: getSelectedCenterName(),
                     sampleTransactionCenter: payload.transactions[0]?.center,
-                    sampleTransactionCenterName: payload.transactions[0]?.centerName
+                    sampleTransactionCenterName: payload.transactions[0]?.centerName,
+                    note: 'Now sending CENTER NAME instead of ID!'
                 });
                 console.log('🔍 Movement type mappings:', payload.transactions.map(tx => ({
                     description: tx.description,
@@ -649,7 +650,7 @@
                         const processedTx = {
                             index: index + 1,
                             date: tx.date,
-                            center: getSelectedCenter(),
+                            center: getSelectedCenterName(),
                             client: tx.client || extractFallbackClient(tx.description), // Use AI-extracted client name with fallback
                             amountWithTaxes: tx.amount,
                             amountWithoutTaxes: '',
@@ -1254,6 +1255,13 @@
         const populateCenterDropdown = (centers) => {
             const centerSelect = document.getElementById('centerSelect');
             
+            if (!centerSelect) {
+                console.error('❌ Center select element not found!');
+                return;
+            }
+
+            console.log('🏢 Populating dropdown with centers:', centers);
+            
             centerSelect.innerHTML = '<option value="">Select a center...</option>';
             centers.forEach(center => {
                 const option = document.createElement('option');
@@ -1263,9 +1271,11 @@
                     option.title = center.description; // Tooltip with description
                 }
                 centerSelect.appendChild(option);
+                console.log('➕ Added center:', center.name, 'with ID:', center._id);
             });
 
             console.log('✅ Center dropdown populated with', centers.length, 'centers');
+            console.log('🔍 Final dropdown HTML:', centerSelect.innerHTML.substring(0, 200) + '...');
         };
 
         // Get selected center ID
@@ -1284,7 +1294,10 @@
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeGoGainIntegration();
-            loadCenters(); // Load centers after initialization
+            // Load centers after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                loadCenters();
+            }, 100);
         });
     </script>
 </body>
