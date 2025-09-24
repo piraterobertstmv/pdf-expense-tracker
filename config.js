@@ -1,6 +1,6 @@
 // Environment configuration for frontend
 window.BACKEND_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3001' 
+    ? 'http://localhost:3002' 
     : 'https://pdf-expense-tracker-api.onrender.com';
 
 console.log('Backend URL configured:', window.BACKEND_URL);
